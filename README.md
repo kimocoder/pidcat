@@ -1,43 +1,74 @@
 PID Cat
 =======
 
-An update to Jeff Sharkey's excellent [logcat color script][1] which only shows
-log entries for processes from a specific application package.
-
-During application development you often want to only display log messages
-coming from your app. Unfortunately, because the process ID changes every time
-you deploy to the phone it becomes a challenge to grep for the right thing.
-
-This script solves that problem by filtering by application package. Supply the
-target package as the sole argument to the python script and enjoy a more
-convenient development process.
+An update to Jake Wharton's excellent [pidcat][1] which filters `adb` result by application package name.
 
     pidcat com.oprah.bees.android
 
+On top of this, this fork will mainly provide these additional options
+A) --timestamp: add timestamp at the front of each line
+B) --grep, --highlight, --grepv: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat` (it will grep lines before `pidcat` cut the original `adb` line for better format so that it won't miss any lines). Also you can specify different color for each word in these options, which is very helpful in checking massive log lines in sophisticated debugging. Corresponding case-ignored options are also provided: --igrep, --ihighlight, --igrev
+C) --header-width: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
+D) --tee, --tee-original: it supports to output the filtered and un-filtered `pidcat` result to specified files, which is useful for checking later
 
-Here is an example of the output when running for the Google Plus app:
+Here is an example of the output of the following command:
+
+    pidcat --timestamp --header-width=15 --highlight="CDMA\|BATTERY\\magenta\|timeout\\white\|remaining\\cyan\|level=100\\cyan"
 
 ![Example screen](screen.png)
 
+You could notice that A) the words are highlighted in specified colors (--highlight); B) timestamps are headed in each line (--timestamp); C) additional indentation are added to align the wrapped line to the right of timestamp header (--header-width)
+
+Here are details of all additional options provided:
+```
+  --header-width N      Width of customized log header. If you have your own
+                        header besides Android log header, this option will
+                        futher indent your log with additional width
+  --grep GREP_WORDS     Filter lines with words in log messages. The words are
+                        delimited with '\|', where each word can be tailed
+                        with a color initialed with '\\'. If no color is
+                        specified, 'RED' will be the default color. For
+                        example, option --grep="word1\|word2\\CYAN" means to
+                        filter out all lines containing either word1 or word2,
+                        and word1 will appear in default color RED while word2
+                        will be in CYAN. Supported colors (case ignored):
+                        {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN,
+                        WHITE}
+  --highlight HIGHLIGHT_WORDS
+                        Words to highlight in log messages. Unlike --grep
+                        option, this option will only highlight the specified
+                        words with specified color but does not filter any
+                        lines. Except this, the format and supported colors
+                        are the same as --grep
+  --grepv GREPV_WORDS   Exclude lines with words from log messages. The format
+                        and supported colors are the same as --grep. Note that
+                        if both --grepv and --grep are provided and they
+                        contain the same word, the line will always show,
+                        which means --grep overwrites --grepv for the same
+                        word they both contain
+  --igrep IGREP_WORDS   The same as --grep, just ignore case
+  --ihighlight IHIGHLIGHT_WORDS
+                        The same as --highlight, just ignore case
+  --igrepv IGREPV_WORDS
+                        The same as --grepv, just ignore case
+  --tee FILE_NAME       Besides stdout output, also output the filtered result
+                        (after grep/grepv) to the file
+  --tee-original ORIGINAL_FILE_NAME
+                        Besides stdout output, also output the unfiltered
+                        result (no grep/grepv, i.e., original adb result) to
+                        the file
+
+```
 
 Install
 -------
 
 Get the script:
 
- *  OS X: Use [Homebrew][2].
-
-         brew install pidcat
-
-    If you need to install the latest development version
-
-        brew unlink pidcat  
-        brew install --HEAD pidcat
-  
- * Others: Download the `pidcat.py` and place it on your PATH.
+ * Download the `pidcat.py` and place it on your PATH.
 
 
-Make sure that `adb` from the [Android SDK][3] is on your PATH. This script will
+Make sure that `adb` from the [Android SDK][2] is on your PATH. This script will
 not work unless this is that case. That means, when you type `adb` and press
 enter into your terminal something actually happens.
 
@@ -50,6 +81,5 @@ Include these lines in your `.bashrc` or `.zshrc`.
 
 *Note:* `<path to Android SDK>` should be absolute and not relative.
 
- [1]: http://jsharkey.org/blog/2009/04/22/modifying-the-android-logcat-stream-for-full-color-debugging/
- [2]: http://brew.sh
- [3]: http://developer.android.com/sdk/
+ [1]: https://github.com/JakeWharton/pidcat
+ [2]: http://developer.android.com/sdk/

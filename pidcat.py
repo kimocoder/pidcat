@@ -46,9 +46,64 @@ parser.add_argument('-t', '--tag', dest='tag', action='append', help='Filter out
 parser.add_argument('-i', '--ignore-tag', dest='ignored_tag', action='append', help='Filter output by ignoring specified tag(s)')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print the version number and exit')
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
+parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', help='Prepend each line of output with the current time.')
+parser.add_argument('--header-width', metavar='N', dest='header_width', type=int, default=0, help='Width of customized log header')
+parser.add_argument('--grep', dest='grep_words', type=str, default='', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. Example \'word1\\|word2\\\\CYAN\'. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE}')
+parser.add_argument('--highlight', dest='highlight_words', type=str, default='', help='Words to highlight in log messages, delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. Example \'word1\\|word2\\\\blue\'. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE}')
+parser.add_argument('--grepv', dest='grepv_words', type=str, default='', help='Exclude lines with words from log messages. The words are delimited with \'\\|\'. Note that if both --grepv and --grep are provided and contains the same word, the line will always show, which means --grep overwrites --grepv for the same word they both contain')
+parser.add_argument('--igrep', dest='igrep_words', type=str, default='', help='The same as grep, just ignore case')
+parser.add_argument('--ihighlight', dest='ihighlight_words', type=str, default='', help='The same as highlight, just ignore case')
+parser.add_argument('--igrepv', dest='igrepv_words', type=str, default='', help='The same as grepv, just ignore case')
+parser.add_argument('--tee', dest='file_name', type=str, default='', help='Besides stdout output, also output the filtered result to the file')
+parser.add_argument('--tee-original', dest='original_file_name', type=str, default='', help='Besides stdout output, also output the unfiltered result (no grep, i.e., original adb result) to the file')
 
 args = parser.parse_args()
 min_level = LOG_LEVELS_MAP[args.min_level.upper()]
+
+BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
+
+color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW, 'BLUE': BLUE, 'MAGENTA': MAGENTA, 'CYAN': CYAN, 'WHITE': WHITE}
+
+def extract_color_from_word(word):
+  w = word
+  c = RED
+  delimiter='\\'
+  index = word.rfind(delimiter)
+  if index is not -1:
+    w = word[0:index]
+    try:
+      c = color_dict[word[index + len(delimiter):].upper()]
+    except KeyError:
+      c = RED
+  return w, c
+
+
+def parse_words_with_color(words):
+  words_with_color = []
+  for word in words:
+    words_with_color.append(extract_color_from_word(word))
+  return words_with_color
+
+grep_words_with_color = None
+highlight_words_with_color = None
+excluded_words = None
+igrep_words_with_color = None
+ihighlight_words_with_color = None
+iexcluded_words = None
+
+if args.grep_words is not None and len(args.grep_words) > 0:
+  grep_words_with_color = parse_words_with_color(args.grep_words.split('\|'))
+if args.highlight_words is not None and len(args.highlight_words) > 0:
+  highlight_words_with_color = parse_words_with_color(args.highlight_words.split('\|'))
+if args.grepv_words is not None and len(args.grepv_words) > 0:
+  excluded_words = args.grepv_words.split('\|')
+
+if args.igrep_words is not None and len(args.igrep_words) > 0:
+  igrep_words_with_color = parse_words_with_color(args.igrep_words.split('\|'))
+if args.ihighlight_words is not None and len(args.ihighlight_words) > 0:
+  ihighlight_words_with_color = parse_words_with_color(args.ihighlight_words.split('\|'))
+if args.igrepv_words is not None and len(args.igrepv_words) > 0:
+  iexcluded_words = args.igrepv_words.split('\|')
 
 package = args.package
 
@@ -86,8 +141,6 @@ try:
 except:
   pass
 
-BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
-
 RESET = '\033[0m'
 
 def termcolor(fg=None, bg=None):
@@ -99,11 +152,80 @@ def termcolor(fg=None, bg=None):
 def colorize(message, fg=None, bg=None):
   return termcolor(fg, bg) + message + RESET
 
+tee_file = None
+if args.file_name is not None and len(args.file_name) > 0:
+  tee_file = open(args.file_name, 'w')
+
+tee_original_file = None
+if args.original_file_name is not None and len(args.original_file_name) > 0:
+  tee_original_file = open(args.original_file_name, 'w')
+
+def output_line(line, filtered_on_stdout = False):
+  if not filtered_on_stdout:
+    print(line)
+    tee_file.write(line)
+    tee_file.write('\n')
+    tee_file.flush()
+
+  if tee_original_file is not None:
+    tee_original_file.write(line)
+    tee_original_file.write('\n')
+    tee_original_file.flush()
+
+
+def grep(message, grep_words_with_color, ignore_case):
+  if grep_words_with_color is not None and len(grep_words_with_color) > 0:
+    found = False
+    for word,color in grep_words_with_color:
+      if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
+        found = True
+        break
+    if not found:
+      return False
+  return True
+
+def grepv(message, grepv_words, ignore_case):
+  if grepv_words is not None and len(grepv_words) > 0:
+    for word in grepv_words:
+      if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
+        return False
+  return True
+
+def colorize_substr(str, start_index, end_index, color):
+  colored_word = colorize(str[start_index:end_index], fg=color)
+  return str[:start_index] + colored_word + str[end_index:], start_index + len(colored_word)
+
+def highlight(line, words_to_color, ignore_case, prev_line, next_line):
+  for word, color in words_to_color:
+    if len(word) > 0:
+      index = 0
+      while True:
+        try:
+          if ignore_case:
+            index = line.upper().index(word.upper(), index)
+          else:
+            index = line.index(word, index)
+        except ValueError:
+          break
+        line, index = colorize_substr(line, index, index + len(word), color)
+
+      for i in range(1, len(word)):
+        if word == prev_line[-i:] + line[:len(word) - i]:
+          line, index = colorize_substr(line, 0, len(word) - i, color)
+          break
+
+      for i in range(1, len(word)):
+        if word == line[-i:] + next_line[:len(word) - i]:
+          line, index = colorize_substr(line, len(line) - i, len(line), color)
+          break
+
+  return line
+
 def indent_wrap(message):
   if width == -1:
     return message
   message = message.replace('\t', '    ')
-  wrap_area = width - header_size
+  wrap_area = width - header_size - args.header_width
   messagebuf = ''
   current = 0
   while current < len(message):
@@ -111,9 +233,25 @@ def indent_wrap(message):
     messagebuf += message[current:next]
     if next < len(message):
       messagebuf += '\n'
-      messagebuf += ' ' * header_size
+      messagebuf += ' ' * (header_size +  + args.header_width)
     current = next
   return messagebuf
+
+def split_to_lines(message):
+  if width == -1:
+    return message
+  message = message.replace('\t', '    ')
+  lines = []
+  current = 0
+  while current < len(message):
+    if current == 0:
+      wrap_area = width - header_size
+    else:
+      wrap_area = width - header_size - args.header_width
+    next = min(current + wrap_area, len(message))
+    lines.append(message[current:next])
+    current = next
+  return lines
 
 
 LAST_USED = [RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN]
@@ -143,7 +281,7 @@ def allocate_color(tag):
 RULES = {
   # StrictMode policy violation; ~duration=319 ms: android.os.StrictMode$StrictModeDiskWriteViolation: policy=31 violation=1
   re.compile(r'^(StrictMode policy violation)(; ~duration=)(\d+ ms)')
-    : r'%s\1%s\2%s\3%s' % (termcolor(RED), RESET, termcolor(YELLOW), RESET),
+  : r'%s\1%s\2%s\3%s' % (termcolor(RED), RESET, termcolor(YELLOW), RESET),
 }
 
 # Only enable GC coloring if the user opted-in
@@ -171,13 +309,13 @@ PID_START_DALVIK = re.compile(r'^E/dalvikvm\(\s*(\d+)\): >>>>> ([a-zA-Z0-9._:]+)
 PID_KILL  = re.compile(r'^Killing (\d+):([a-zA-Z0-9._:]+)/[^:]+: (.*)$')
 PID_LEAVE = re.compile(r'^No longer want ([a-zA-Z0-9._:]+) \(pid (\d+)\): .*$')
 PID_DEATH = re.compile(r'^Process ([a-zA-Z0-9._:]+) \(pid (\d+)\) has died.?$')
-LOG_LINE  = re.compile(r'^([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
+LOG_LINE  = re.compile(r'^[0-9-]+ ([0-9:.]+) ([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
 BUG_LINE  = re.compile(r'.*nativeGetEnabledTags.*')
 BACKTRACE_LINE = re.compile(r'^#(.*?)pc\s(.*?)$')
 
 adb_command = base_adb_command[:]
 adb_command.append('logcat')
-adb_command.extend(['-v', 'brief'])
+adb_command.extend(['-v', 'time', 'brief'])
 
 # Clear log before starting logcat
 if args.clear_logcat:
@@ -249,7 +387,7 @@ def parse_start_proc(line):
     return line_package, '', line_pid, line_uid, ''
   return None
 
-def tag_in_tags_regex(tag, tags):  
+def tag_in_tags_regex(tag, tags):
   return any(re.match(r'^' + t + r'$', tag) for t in map(str.strip, tags))
 
 ps_command = base_adb_command + ['shell', 'ps']
@@ -286,7 +424,7 @@ while adb.poll() is None:
   if log_line is None:
     continue
 
-  level, tag, owner, message = log_line.groups()
+  time, level, tag, owner, message = log_line.groups()
   tag = tag.strip()
   start = parse_start_proc(line)
   if start:
@@ -302,7 +440,7 @@ while adb.poll() is None:
       linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
       linebuf += ' PID: %s   UID: %s   GIDs: %s' % (line_pid, line_uid, line_gids)
       linebuf += '\n'
-      print(linebuf)
+      output_line(linebuf)
       last_tag = None # Ensure next log gets a tag printed
 
   dead_pid, dead_pname = parse_death(tag, message)
@@ -312,7 +450,7 @@ while adb.poll() is None:
     linebuf += colorize(' ' * (header_size - 1), bg=RED)
     linebuf += ' Process %s (PID: %s) ended' % (dead_pname, dead_pid)
     linebuf += '\n'
-    print(linebuf)
+    output_line(linebuf)
     last_tag = None # Ensure next log gets a tag printed
 
   # Make sure the backtrace is printed after a native crash
@@ -351,10 +489,61 @@ while adb.poll() is None:
     linebuf += ' ' + level + ' '
   linebuf += ' '
 
+  filter_on_stdout = False
+
+  keep_line = grep(message, grep_words_with_color, False)
+  if not keep_line:
+    filter_on_stdout = True
+  else:
+    keep_line = grep(message, igrep_words_with_color, True)
+    if not keep_line:
+      filter_on_stdout = True
+    else:
+      if not keep_line:
+        if not grepv(message, excluded_words, False):
+          filter_on_stdout = True
+        else:
+          if not grepv(message, iexcluded_words, True):
+            filter_on_stdout = True
+
+  words_to_color=[]
+  if grep_words_with_color is not None:
+    words_to_color += grep_words_with_color
+  if highlight_words_with_color is not None:
+    words_to_color += highlight_words_with_color
+
+  iwords_to_color=[]
+  if igrep_words_with_color is not None:
+    iwords_to_color += igrep_words_with_color
+  if ihighlight_words_with_color is not None:
+    iwords_to_color += ihighlight_words_with_color
+
   # format tag message using rules
   for matcher in RULES:
     replace = RULES[matcher]
     message = matcher.sub(replace, message)
 
-  linebuf += indent_wrap(message)
-  print(linebuf.encode('utf-8'))
+  if args.add_timestamp:
+    message = time + " | " + message
+
+  lines = split_to_lines(message)
+
+  if len(lines) > 0:
+    n = 0
+    prev_line = ''
+    for line in lines:
+      if n > 0:
+        linebuf += '\n'
+        linebuf += ' ' * (header_size + + args.header_width)
+      cur_line = line
+      if n < len(lines) - 1:
+        next_line = lines[n + 1]
+      else:
+        next_line = ''
+      line = highlight(line, words_to_color, False, prev_line, next_line)
+      line = highlight(line, iwords_to_color, True, prev_line, next_line)
+      linebuf += line
+      n += 1
+      prev_line = cur_line
+
+  output_line(linebuf.encode('utf-8'), filter_on_stdout)

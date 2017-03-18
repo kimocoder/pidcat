@@ -163,9 +163,10 @@ if args.original_file_name is not None and len(args.original_file_name) > 0:
 def output_line(line, filtered_on_stdout = False):
   if not filtered_on_stdout:
     print(line)
-    tee_file.write(line)
-    tee_file.write('\n')
-    tee_file.flush()
+    if tee_file is not None:
+      tee_file.write(line)
+      tee_file.write('\n')
+      tee_file.flush()
 
   if tee_original_file is not None:
     tee_original_file.write(line)

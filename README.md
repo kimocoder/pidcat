@@ -7,7 +7,7 @@ An update to Jake Wharton's excellent [pidcat][1] which filters `adb` result by 
 
 On top of this, this fork will mainly provide these additional options
  * `--timestamp`: add timestamp at the front of each line
- * `--grep`, `--highlight`, `--grepv`: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat` (it will grep lines before `pidcat` cut the original `adb` line for better format so that it won't miss any lines). Also you can specify different color for each word in these options, which is very helpful in checking massive log lines in sophisticated debugging. Corresponding case-ignored options are also provided: `--igrep`, `--ihighlight`, `--igrev`
+ * `--grep`, `--highlight`, `--grepv`: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat`. This script will grep lines before `pidcat` cuts the original `adb` output line so as to not miss any lines in grepping. Moreover, you can specify different colors for each word in these options, which is very helpful in checking different word terms in massive log in sophisticated debugging. Corresponding case-ignored options are also provided: `--igrep`, `--ihighlight`, `--igrev`
  * `--header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
  * `--tee`, `--tee-original`: it supports to output the filtered and un-filtered `pidcat` result to specified files, which is useful for checking later
 
@@ -18,9 +18,9 @@ Here is an example of the output of the following command:
 ![Example screen](screen.png)
 
 You could notice that
- * the words are highlighted in specified colors, even the cut words due to line wrapping (--highlight);
- * timestamps are headed in each line (--timestamp);
- * additional indentation are added to align the wrapped line to the right of timestamp header (--header-width);
+ * The words are highlighted in specified colors, even the cut words due to line wrapping (`--highlight`);
+ * Timestamps are headed in each line (`--timestamp`);
+ * Additional indentation spaces are added to align the wrapped lines to the right of timestamp headers (`--header-width`);
 
 Here are details of all additional options provided:
 ```

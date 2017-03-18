@@ -18,9 +18,9 @@ Here is an example of the output of the following command:
 ![Example screen](screen.png)
 
 You could notice that
-  1. the words are highlighted in specified colors, even the cut words due to line wrapping (--highlight);
-  2. timestamps are headed in each line (--timestamp);
-  3. additional indentation are added to align the wrapped line to the right of timestamp header (--header-width);
+ * the words are highlighted in specified colors, even the cut words due to line wrapping (--highlight);
+ * timestamps are headed in each line (--timestamp);
+ * additional indentation are added to align the wrapped line to the right of timestamp header (--header-width);
 
 Here are details of all additional options provided:
 ```

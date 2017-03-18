@@ -1,5 +1,5 @@
-PID Cat
-=======
+PID Cat (extended)
+==================
 
 An update to Jake Wharton's excellent [pidcat][1] which filters `adb` result by application package name.
 

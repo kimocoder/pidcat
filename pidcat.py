@@ -84,6 +84,9 @@ def parse_words_with_color(words):
     words_with_color.append(extract_color_from_word(word))
   return words_with_color
 
+def empty(vector):
+  return vector is None or len(vector) <= 0
+
 grep_words_with_color = None
 highlight_words_with_color = None
 excluded_words = None
@@ -91,18 +94,18 @@ igrep_words_with_color = None
 ihighlight_words_with_color = None
 iexcluded_words = None
 
-if args.grep_words is not None and len(args.grep_words) > 0:
+if not empty(args.grep_words):
   grep_words_with_color = parse_words_with_color(args.grep_words.split('\|'))
-if args.highlight_words is not None and len(args.highlight_words) > 0:
+if not empty(args.highlight_words):
   highlight_words_with_color = parse_words_with_color(args.highlight_words.split('\|'))
-if args.grepv_words is not None and len(args.grepv_words) > 0:
+if not empty(args.grepv_words):
   excluded_words = args.grepv_words.split('\|')
 
-if args.igrep_words is not None and len(args.igrep_words) > 0:
+if not empty(args.igrep_words):
   igrep_words_with_color = parse_words_with_color(args.igrep_words.split('\|'))
-if args.ihighlight_words is not None and len(args.ihighlight_words) > 0:
+if not empty(args.ihighlight_words):
   ihighlight_words_with_color = parse_words_with_color(args.ihighlight_words.split('\|'))
-if args.igrepv_words is not None and len(args.igrepv_words) > 0:
+if not empty(args.igrepv_words):
   iexcluded_words = args.igrepv_words.split('\|')
 
 package = args.package
@@ -153,15 +156,15 @@ def colorize(message, fg=None, bg=None):
   return termcolor(fg, bg) + message + RESET
 
 tee_file = None
-if args.file_name is not None and len(args.file_name) > 0:
+if not empty(args.file_name):
   tee_file = open(args.file_name, 'w')
 
 tee_original_file = None
-if args.original_file_name is not None and len(args.original_file_name) > 0:
+if not empty(args.original_file_name):
   tee_original_file = open(args.original_file_name, 'w')
 
-def output_line(line, filtered_on_stdout = False):
-  if not filtered_on_stdout:
+def output_line(line, keep_line_on_stdout = True):
+  if keep_line_on_stdout:
     print(line)
     if tee_file is not None:
       tee_file.write(line)
@@ -174,23 +177,19 @@ def output_line(line, filtered_on_stdout = False):
     tee_original_file.flush()
 
 
-def grep(message, grep_words_with_color, ignore_case):
-  if grep_words_with_color is not None and len(grep_words_with_color) > 0:
-    found = False
+def does_match_grep(message, grep_words_with_color, ignore_case):
+  if not empty(grep_words_with_color):
     for word,color in grep_words_with_color:
       if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
-        found = True
-        break
-    if not found:
-      return False
-  return True
+        return True
+  return False
 
-def grepv(message, grepv_words, ignore_case):
-  if grepv_words is not None and len(grepv_words) > 0:
+def does_match_grepv(message, grepv_words, ignore_case):
+  if not empty(grepv_words):
     for word in grepv_words:
       if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
-        return False
-  return True
+        return True
+  return False
 
 def colorize_substr(str, start_index, end_index, color):
   colored_word = colorize(str[start_index:end_index], fg=color)
@@ -490,22 +489,23 @@ while adb.poll() is None:
     linebuf += ' ' + level + ' '
   linebuf += ' '
 
-  filter_on_stdout = False
+  keep_line_on_stdout = False
 
-  keep_line = grep(message, grep_words_with_color, False)
-  if not keep_line:
-    filter_on_stdout = True
+  matches_grep = does_match_grep(message, grep_words_with_color, False)
+  matches_igrep = does_match_grep(message, igrep_words_with_color, True)
+
+  matches_grepv = does_match_grepv(message, excluded_words, False)
+  matches_igrepv = does_match_grepv(message, iexcluded_words, True)
+
+  if matches_grep or matches_igrep:
+    keep_line_on_stdout = True
+  elif matches_grepv or matches_igrepv:
+    keep_line_on_stdout = False
   else:
-    keep_line = grep(message, igrep_words_with_color, True)
-    if not keep_line:
-      filter_on_stdout = True
+    if empty(grep_words_with_color) and empty(igrep_words_with_color):
+      keep_line_on_stdout = True
     else:
-      if not keep_line:
-        if not grepv(message, excluded_words, False):
-          filter_on_stdout = True
-        else:
-          if not grepv(message, iexcluded_words, True):
-            filter_on_stdout = True
+      keep_line_on_stdout = False
 
   words_to_color=[]
   if grep_words_with_color is not None:
@@ -547,4 +547,4 @@ while adb.poll() is None:
       n += 1
       prev_line = cur_line
 
-  output_line(linebuf.encode('utf-8'), filter_on_stdout)
+  output_line(linebuf.encode('utf-8'), keep_line_on_stdout)

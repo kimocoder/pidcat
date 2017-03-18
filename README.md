@@ -13,7 +13,7 @@ On top of this, this fork will mainly provide these additional options
 
 Here is an example of the output of the following command:
 
-    pidcat --timestamp --header-width=15 --highlight="CDMA\|BATTERY\\magenta\|timeout\\white\|remaining\\cyan\|level=100\\cyan"
+    pidcat --timestamp --header-width=15 --highlight="CDMA\|BATTERY\\magenta\|timeout\\white\|level=100\\cyan"
 
 ![Example screen](screen.png)
 

@@ -147,14 +147,14 @@ except:
 
 RESET = '\033[0m'
 
-def termcolor(fg=None, bg=None):
+def termcolor(fg=None, bg=None, ul=False):
   codes = []
   if fg is not None: codes.append('3%d' % fg)
   if bg is not None: codes.append('10%d' % bg)
-  return '\033[4;%sm' % ';'.join(codes) if codes else ''
+  return '\033[%s%sm' % ('4;' if ul else '', ';'.join(codes) if codes else '')
 
-def colorize(message, fg=None, bg=None):
-  return termcolor(fg, bg) + message + RESET
+def colorize(message, fg=None, bg=None, ul=False):
+  return termcolor(fg, bg, ul) + message + RESET
 
 tee_file = None
 if not empty(args.file_name):
@@ -197,7 +197,7 @@ def does_match_grepv(message, grepv_words, ignore_case):
   return False
 
 def colorize_substr(str, start_index, end_index, color):
-  colored_word = colorize(str[start_index:end_index], fg=color)
+  colored_word = colorize(str[start_index:end_index], fg=color, ul=True)
   return str[:start_index] + colored_word + str[end_index:], start_index + len(colored_word)
 
 def highlight(line, words_to_color, ignore_case, prev_line, next_line):

@@ -23,7 +23,7 @@ You could notice that
  * Additional indentation spaces are added to align the wrapped lines to the right of timestamp headers (`--header-width`);
 
 Here are details of all additional options provided:
-```
+<pre>
   --timestamp           Prepend each line of output with the current time.
   --header-width N      Width of customized log header. If you have your own
                         header besides Android log header, this option will
@@ -64,7 +64,7 @@ Here are details of all additional options provided:
   --tee-adb ADB_OUTPUT_FILE_NAME
                         Output original adb result (raw adb output) to the
                         file
-```
+</pre>
 
 Install
 -------

@@ -150,7 +150,7 @@ def termcolor(fg=None, bg=None):
   codes = []
   if fg is not None: codes.append('3%d' % fg)
   if bg is not None: codes.append('10%d' % bg)
-  return '\033[%sm' % ';'.join(codes) if codes else ''
+  return '\033[4;%sm' % ';'.join(codes) if codes else ''
 
 def colorize(message, fg=None, bg=None):
   return termcolor(fg, bg) + message + RESET

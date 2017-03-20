@@ -55,7 +55,8 @@ parser.add_argument('--igrep', dest='igrep_words', type=str, default='', help='T
 parser.add_argument('--ihighlight', dest='ihighlight_words', type=str, default='', help='The same as --highlight, just ignore case')
 parser.add_argument('--igrepv', dest='igrepv_words', type=str, default='', help='The same as --grepv, just ignore case')
 parser.add_argument('--tee', dest='file_name', type=str, default='', help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
-parser.add_argument('--tee-original', dest='original_file_name', type=str, default='', help='Besides stdout output, also output the unfiltered result (no grep/grepv, i.e., original adb output) to the file')
+parser.add_argument('--tee-original', dest='original_file_name', type=str, default='', help='Besides stdout output, also output the unfiltered result (all pidcat-formatted lines) to the file')
+parser.add_argument('--tee-adb', dest='adb_output_file_name', type=str, default='', help='Output original adb result (raw adb output) to the file')
 
 args = parser.parse_args()
 min_level = LOG_LEVELS_MAP[args.min_level.upper()]
@@ -162,6 +163,10 @@ if not empty(args.file_name):
 tee_original_file = None
 if not empty(args.original_file_name):
   tee_original_file = open(args.original_file_name, 'w')
+
+tee_adb_file = None
+if not empty(args.adb_output_file_name):
+  tee_adb_file = open(args.adb_output_file_name, 'w')
 
 def output_line(line, keep_line_on_stdout = True):
   if keep_line_on_stdout:
@@ -411,6 +416,10 @@ while True:
 while adb.poll() is None:
   try:
     line = adb.stdout.readline().decode('utf-8', 'replace').strip()
+    if tee_adb_file is not None:
+      tee_adb_file.write(line.encode('utf-8'))
+      tee_adb_file.write('\n')
+      tee_adb_file.flush()
   except KeyboardInterrupt:
     break
   if len(line) == 0:

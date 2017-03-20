@@ -24,9 +24,11 @@ You could notice that
 
 Here are details of all additional options provided:
 ```
+  --timestamp           Prepend each line of output with the current time.
   --header-width N      Width of customized log header. If you have your own
                         header besides Android log header, this option will
-                        further indent your wrapped lines with additional width
+                        further indent your wrapped lines with additional
+                        width
   --grep GREP_WORDS     Filter lines with words in log messages. The words are
                         delimited with '\|', where each word can be tailed
                         with a color initialed with '\\'. If no color is
@@ -58,9 +60,10 @@ Here are details of all additional options provided:
                         (after grep/grepv) to the file
   --tee-original ORIGINAL_FILE_NAME
                         Besides stdout output, also output the unfiltered
-                        result (no grep/grepv, i.e., original adb output) to
-                        the file
-
+                        result (all pidcat-formatted lines) to the file
+  --tee-adb ADB_OUTPUT_FILE_NAME
+                        Output original adb result (raw adb output) to the
+                        file
 ```
 
 Install

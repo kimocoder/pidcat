@@ -64,6 +64,9 @@ Here are details of all additional options provided:
   --tee-adb ADB_OUTPUT_FILE_NAME
                         Output original adb result (raw adb output) to the
                         file
+  --keep-all-fatal      Do not filter any fatal logs from pidcat output. This
+                        is quite helpful to avoid ignoring information about
+                        exceptions, crash stacks and assertion failures
 </pre>
 
 Install

@@ -57,6 +57,7 @@ parser.add_argument('--igrepv', dest='igrepv_words', type=str, default='', help=
 parser.add_argument('--tee', dest='file_name', type=str, default='', help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
 parser.add_argument('--tee-original', dest='original_file_name', type=str, default='', help='Besides stdout output, also output the unfiltered result (all pidcat-formatted lines) to the file')
 parser.add_argument('--tee-adb', dest='adb_output_file_name', type=str, default='', help='Output original adb result (raw adb output) to the file')
+parser.add_argument('--keep-all-fatal', dest='keep_fatal', action='store_true', help='Do not filter any fatal logs from pidcat output. This is quite helpful to avoid ignoring information about exceptions, crash stacks and assertion failures')
 
 args = parser.parse_args()
 min_level = LOG_LEVELS_MAP[args.min_level.upper()]
@@ -498,23 +499,26 @@ while adb.poll() is None:
     linebuf += ' ' + level + ' '
   linebuf += ' '
 
-  keep_line_on_stdout = False
-
-  matches_grep = does_match_grep(message, grep_words_with_color, False)
-  matches_igrep = does_match_grep(message, igrep_words_with_color, True)
-
-  matches_grepv = does_match_grepv(message, excluded_words, False)
-  matches_igrepv = does_match_grepv(message, iexcluded_words, True)
-
-  if matches_grep or matches_igrep:
+  if args.keep_fatal and level == 'F':
     keep_line_on_stdout = True
-  elif matches_grepv or matches_igrepv:
-    keep_line_on_stdout = False
   else:
-    if empty(grep_words_with_color) and empty(igrep_words_with_color):
+    keep_line_on_stdout = False
+
+    matches_grep = does_match_grep(message, grep_words_with_color, False)
+    matches_igrep = does_match_grep(message, igrep_words_with_color, True)
+
+    matches_grepv = does_match_grepv(message, excluded_words, False)
+    matches_igrepv = does_match_grepv(message, iexcluded_words, True)
+
+    if matches_grep or matches_igrep:
       keep_line_on_stdout = True
-    else:
+    elif matches_grepv or matches_igrepv:
       keep_line_on_stdout = False
+    else:
+      if empty(grep_words_with_color) and empty(igrep_words_with_color):
+        keep_line_on_stdout = True
+      else:
+        keep_line_on_stdout = False
 
   words_to_color=[]
   if grep_words_with_color is not None:

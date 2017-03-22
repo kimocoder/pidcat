@@ -55,28 +55,28 @@ Here are details of all additional options provided:
                         grep' options in the command line, and if so, the
                         command will grep all of the key words in all '--grep'
                         options
-  --hl HIGHLIGHT_WORDS  Words to highlight in log messages. Unlike --grep
+  --hl HIGHLIGHT_WORDS  Words to highlight in log messages. Unlike '--grep'
                         option, this option will only highlight the specified
                         words with specified color but does not filter any
                         lines. Except this, the format and supported colors
-                        are the same as --grep. You can have multiple '--hl'
+                        are the same as '--grep'. You can have multiple '--hl'
                         options in the command line, and if so, the command
                         will highlight all of the key words in all '--hl'
                         options
   --grepv GREPV_WORDS   Exclude lines with words from log messages. The format
-                        and supported colors are the same as --grep. Note that
-                        if both --grepv and --grep are provided and they
-                        contain the same word, the line will always show,
-                        which means --grep overwrites --grepv for the same
+                        and supported colors are the same as '--grep'. Note
+                        that if both '--grepv' and '--grep' are provided and
+                        they contain the same word, the line will always show,
+                        which means '--grep' overwrites '--grepv' for the same
                         word they both contain. You can have multiple '--
                         grepv' options in the command line, and if so, the
                         command will exclude the lines containing any keywords
                         in all '--grepv' options
-  --igrep IGREP_WORDS   The same as --grep, just ignore case
+  --igrep IGREP_WORDS   The same as '--grep', just ignore case
   --ihl IHIGHLIGHT_WORDS
-                        The same as --hl, just ignore case
+                        The same as '--hl', just ignore case
   --igrepv IGREPV_WORDS
-                        The same as --grepv, just ignore case
+                        The same as '--grepv', just ignore case
   --keep-all-fatal      Do not filter any fatal logs from pidcat output. This
                         is quite helpful to avoid ignoring information about
                         exceptions, crash stacks and assertion failures

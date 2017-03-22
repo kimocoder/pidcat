@@ -9,12 +9,12 @@ __version__ = '1.0.0'
 
 parser = argparse.ArgumentParser(description='Highlight keywords in a file or stdin with different specified colors')
 parser.add_argument('files', nargs='*', help='File path', default=None)
-parser.add_argument('--grep', dest='grep_words', type=str, default='', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\"word1\\|word2\\\\CYAN\" means to filter out all lines containing either word1 or word2, and word1 will appear in default color RED while word2 will be in CYAN. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix \'BG_\' is background color')
-parser.add_argument('--hl', dest='highlight_words', type=str, default='', help='Words to highlight in log messages. Unlike --grep option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as --grep')
-parser.add_argument('--grepv', dest='grepv_words', type=str, default='', help='Exclude lines with words from log messages. The format and supported colors are the same as --grep. Note that if both --grepv and --grep are provided and they contain the same word, the line will always show, which means --grep overwrites --grepv for the same word they both contain')
-parser.add_argument('--igrep', dest='igrep_words', type=str, default='', help='The same as --grep, just ignore case')
-parser.add_argument('--ihl', dest='ihighlight_words', type=str, default='', help='The same as --hl, just ignore case')
-parser.add_argument('--igrepv', dest='igrepv_words', type=str, default='', help='The same as --grepv, just ignore case')
+parser.add_argument('--grep', dest='grep_words', action='append', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\"word1\\|word2\\\\CYAN\" means to filter out all lines containing either word1 or word2, and word1 will appear in default color RED while word2 will be in CYAN. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix \'BG_\' is background color')
+parser.add_argument('--hl', dest='highlight_words', action='append', help='Words to highlight in log messages. Unlike --grep option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as --grep')
+parser.add_argument('--grepv', dest='grepv_words', action='append', help='Exclude lines with words from log messages. The format and supported colors are the same as --grep. Note that if both --grepv and --grep are provided and they contain the same word, the line will always show, which means --grep overwrites --grepv for the same word they both contain')
+parser.add_argument('--igrep', dest='igrep_words', action='append', help='The same as --grep, just ignore case')
+parser.add_argument('--ihl', dest='ihighlight_words', action='append', help='The same as --hl, just ignore case')
+parser.add_argument('--igrepv', dest='igrepv_words', action='append', help='The same as --grepv, just ignore case')
 parser.add_argument('--wrap-indent', dest='wrap_indent_width', type=int, default=0, help='If this option is provided, each wrapped line will be added an extra indent. This option implicitly enables `--wrap` option, however, please NOTE that when running in pipe mode, you have to use --wrap option explicitly to specify the terminal width by just adding \'--wrap=`tput cols`\'. For example, \'cat file.txt | hl.py --grep="test" --wrap=`tput cols`\'')
 parser.add_argument('--wrap', dest='terminal_width', type=int, default=-1, help='When running in pipe mode (like \'cat file.txt | hl.py --grep="test" --wrap=`tput cols`\'), if you want to wrap each line width specified width, you need to give terminal width as the value, just put \"`tput cols`\" here. When this option is provided, every line will be wrapped based on the \'terminal_width\' specified, where each line will be limited to the area with this width')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print the version number and exit')
@@ -33,6 +33,7 @@ BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
 color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW, 'BLUE': BLUE, 'MAGENTA': MAGENTA, 'CYAN': CYAN, 'WHITE': WHITE}
 contrast_color_dict = {BLACK: WHITE, RED: WHITE, GREEN: BLACK, YELLOW: BLACK, BLUE: WHITE, MAGENTA: WHITE, CYAN: BLACK, WHITE: BLACK}
+
 
 def extract_color_from_word(word):
     w = word
@@ -72,18 +73,30 @@ ihighlight_words_with_color = None
 iexcluded_words = None
 
 if not empty(args.grep_words):
-    grep_words_with_color = parse_words_with_color(args.grep_words.split('\|'))
+    grep_words_with_color = []
+    for words in args.grep_words:
+        grep_words_with_color += parse_words_with_color(words.split('\|'))
 if not empty(args.highlight_words):
-    highlight_words_with_color = parse_words_with_color(args.highlight_words.split('\|'))
+    highlight_words_with_color = []
+    for words in args.highlight_words:
+        highlight_words_with_color += parse_words_with_color(words.split('\|'))
 if not empty(args.grepv_words):
-    excluded_words = args.grepv_words.split('\|')
+    excluded_words = []
+    for words in args.grepv_words:
+        excluded_words += words.split('\|')
 
 if not empty(args.igrep_words):
-    igrep_words_with_color = parse_words_with_color(args.igrep_words.split('\|'))
+    igrep_words_with_color = []
+    for words in args.igrep_words:
+        igrep_words_with_color += parse_words_with_color(words.split('\|'))
 if not empty(args.ihighlight_words):
-    ihighlight_words_with_color = parse_words_with_color(args.ihighlight_words.split('\|'))
+    ihighlight_words_with_color = []
+    for words in args.ihighlight_words:
+        ihighlight_words_with_color += parse_words_with_color(words.split('\|'))
 if not empty(args.igrepv_words):
-    iexcluded_words = args.igrepv_words.split('\|')
+    iexcluded_words = []
+    for words in args.igrepv_words:
+        iexcluded_words += words.split('\|')
 
 RESET = '\033[0m'
 EOL = '\033[K'
@@ -224,8 +237,6 @@ def run(input_src, file_path):
             line = input_src.readline().decode('utf-8')
             if not line:
                 break
-        except KeyboardInterrupt:
-            return -1
         except UnicodeDecodeError:
             print_error('Can\'t decode line as utf-8 for file \'' + file_path + '\'')
             continue
@@ -296,7 +307,10 @@ else:
             except (OSError, IOError) as e:
                 print_error('Can\'t open file \'' + path + '\'!!')
                 continue
-            res = run(f, path)
-            f.close()
-            if res is -1:
-                sys.exit(-1)
+            try:
+                res = run(f, path)
+                f.close()
+            except KeyboardInterrupt:
+                f.close()
+                print(RESET + EOL + '\n')
+                print('KeyboardInterrupt\n')

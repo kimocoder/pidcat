@@ -48,12 +48,12 @@ parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + _
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
 parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', default=False, help='Prepend each line of output with the current time.')
 parser.add_argument('--extra-header-width', metavar='N', dest='extra_header_width', type=int, default=0, help='Width of customized log header. If you have your own header besides Android log header, this option will further indent your wrapped lines with additional width')
-parser.add_argument('--grep', dest='grep_words', type=str, default='', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\"word1\\|word2\\\\CYAN\" means to filter out all lines containing either word1 or word2, and word1 will appear in default color RED while word2 will be in CYAN. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix \'BG_\' is background color')
-parser.add_argument('--hl', dest='highlight_words', type=str, default='', help='Words to highlight in log messages. Unlike --grep option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as --grep')
-parser.add_argument('--grepv', dest='grepv_words', type=str, default='', help='Exclude lines with words from log messages. The format and supported colors are the same as --grep. Note that if both --grepv and --grep are provided and they contain the same word, the line will always show, which means --grep overwrites --grepv for the same word they both contain')
-parser.add_argument('--igrep', dest='igrep_words', type=str, default='', help='The same as --grep, just ignore case')
-parser.add_argument('--ihl', dest='ihighlight_words', type=str, default='', help='The same as --hl, just ignore case')
-parser.add_argument('--igrepv', dest='igrepv_words', type=str, default='', help='The same as --grepv, just ignore case')
+parser.add_argument('--grep', dest='grep_words', action='append', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\"word1\\|word2\\\\CYAN\" means to filter out all lines containing either word1 or word2, and word1 will appear in default color RED while word2 will be in CYAN. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix \'BG_\' is background color. You can have multiple \'--grep\' options in the command line, and if so, the command will grep all of the key words in all \'--grep\' options')
+parser.add_argument('--hl', dest='highlight_words', action='append', help='Words to highlight in log messages. Unlike --grep option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as --grep. You can have multiple \'--hl\' options in the command line, and if so, the command will highlight all of the key words in all \'--hl\' options')
+parser.add_argument('--grepv', dest='grepv_words', action='append', help='Exclude lines with words from log messages. The format and supported colors are the same as --grep. Note that if both --grepv and --grep are provided and they contain the same word, the line will always show, which means --grep overwrites --grepv for the same word they both contain. You can have multiple \'--grepv\' options in the command line, and if so, the command will exclude the lines containing any keywords in all \'--grepv\' options')
+parser.add_argument('--igrep', dest='igrep_words', action='append', help='The same as --grep, just ignore case')
+parser.add_argument('--ihl', dest='ihighlight_words', action='append', help='The same as --hl, just ignore case')
+parser.add_argument('--igrepv', dest='igrepv_words', action='append', help='The same as --grepv, just ignore case')
 parser.add_argument('--keep-all-fatal', dest='keep_fatal', action='store_true', help='Do not filter any fatal logs from pidcat output. This is quite helpful to avoid ignoring information about exceptions, crash stacks and assertion failures')
 parser.add_argument('--tee', dest='file_name', type=str, default='', help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
 parser.add_argument('--tee-original', dest='original_file_name', type=str, default='', help='Besides stdout output, also output the unfiltered result (all pidcat-formatted lines) to the file')
@@ -105,18 +105,30 @@ ihighlight_words_with_color = None
 iexcluded_words = None
 
 if not empty(args.grep_words):
-  grep_words_with_color = parse_words_with_color(args.grep_words.split('\|'))
+    grep_words_with_color = []
+    for words in args.grep_words:
+        grep_words_with_color += parse_words_with_color(words.split('\|'))
 if not empty(args.highlight_words):
-  highlight_words_with_color = parse_words_with_color(args.highlight_words.split('\|'))
+    highlight_words_with_color = []
+    for words in args.highlight_words:
+        highlight_words_with_color += parse_words_with_color(words.split('\|'))
 if not empty(args.grepv_words):
-  excluded_words = args.grepv_words.split('\|')
+    excluded_words = []
+    for words in args.grepv_words:
+        excluded_words += words.split('\|')
 
 if not empty(args.igrep_words):
-  igrep_words_with_color = parse_words_with_color(args.igrep_words.split('\|'))
+    igrep_words_with_color = []
+    for words in args.igrep_words:
+        igrep_words_with_color += parse_words_with_color(words.split('\|'))
 if not empty(args.ihighlight_words):
-  ihighlight_words_with_color = parse_words_with_color(args.ihighlight_words.split('\|'))
+    ihighlight_words_with_color = []
+    for words in args.ihighlight_words:
+        ihighlight_words_with_color += parse_words_with_color(words.split('\|'))
 if not empty(args.igrepv_words):
-  iexcluded_words = args.igrepv_words.split('\|')
+    iexcluded_words = []
+    for words in args.igrepv_words:
+        iexcluded_words += words.split('\|')
 
 package = args.package
 
@@ -467,6 +479,8 @@ while True:
   try:
     line = ps_pid.stdout.readline().decode('utf-8', 'replace').strip()
   except KeyboardInterrupt:
+    print(RESET + EOL + '\n')
+    print('KeyboardInterrupt')
     break
   if len(line) == 0:
     break
@@ -484,148 +498,154 @@ if args.terminal_width_for_pipe_mode is not -1:
 else:
   input_src = adb.stdout
 
-while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.terminal_width_for_pipe_mode is not -1:
-  try:
-    line = input_src.readline().decode('utf-8', 'replace').strip()
-    if tee_adb_file is not None:
-      tee_adb_file.write(line.encode('utf-8'))
-      tee_adb_file.write('\n')
-      tee_adb_file.flush()
-  except KeyboardInterrupt:
-    break
-  if len(line) == 0:
-    break
+try:
+  while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.terminal_width_for_pipe_mode is not -1:
+    try:
+      line = input_src.readline().decode('utf-8', 'replace').strip()
+      if tee_adb_file is not None:
+        tee_adb_file.write(line.encode('utf-8'))
+        tee_adb_file.write('\n')
+        tee_adb_file.flush()
+    except KeyboardInterrupt:
+      print(RESET + EOL + '\n')
+      print('KeyboardInterrupt')
+      break
+    if len(line) == 0:
+      break
 
-  bug_line = BUG_LINE.match(line)
-  if bug_line is not None:
-    continue
+    bug_line = BUG_LINE.match(line)
+    if bug_line is not None:
+      continue
 
-  log_line = LOG_LINE.match(line)
-  if log_line:
-    time, level, tag, owner, message = log_line.groups()
-  else:
-    log_line = LOG_LINE_NO_TIME.match(line)
+    log_line = LOG_LINE.match(line)
     if log_line:
-      level, tag, owner, message = log_line.groups()
-      time = ''
+      time, level, tag, owner, message = log_line.groups()
     else:
-      log_line = LOG_LINE_DEFAULT_FMT.match(line)
+      log_line = LOG_LINE_NO_TIME.match(line)
       if log_line:
-        time, owner, level, tag, message = log_line.groups()
+        level, tag, owner, message = log_line.groups()
+        time = ''
       else:
-        continue
+        log_line = LOG_LINE_DEFAULT_FMT.match(line)
+        if log_line:
+          time, owner, level, tag, message = log_line.groups()
+        else:
+          continue
 
-  tag = tag.strip()
-  start = parse_start_proc(line)
-  if start:
-    line_package, target, line_pid, line_uid, line_gids = start
-    if match_packages(line_package):
-      pids.add(line_pid)
+    tag = tag.strip()
+    start = parse_start_proc(line)
+    if start:
+      line_package, target, line_pid, line_uid, line_gids = start
+      if match_packages(line_package):
+        pids.add(line_pid)
 
-      app_pid = line_pid
+        app_pid = line_pid
 
+        linebuf  = '\n'
+        linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
+        linebuf += indent_wrap(' Process %s created for %s\n' % (line_package, target), width, header_size + args.extra_header_width)
+        linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
+        linebuf += ' PID: %s   UID: %s   GIDs: %s' % (line_pid, line_uid, line_gids)
+        linebuf += '\n'
+        output_line(linebuf)
+        last_tag = None # Ensure next log gets a tag printed
+
+    dead_pid, dead_pname = parse_death(tag, message)
+    if dead_pid:
+      pids.remove(dead_pid)
       linebuf  = '\n'
-      linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
-      linebuf += indent_wrap(' Process %s created for %s\n' % (line_package, target), width, header_size + args.extra_header_width)
-      linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
-      linebuf += ' PID: %s   UID: %s   GIDs: %s' % (line_pid, line_uid, line_gids)
+      linebuf += colorize(' ' * (header_size - 1), bg=RED)
+      linebuf += ' Process %s (PID: %s) ended' % (dead_pname, dead_pid)
       linebuf += '\n'
       output_line(linebuf)
       last_tag = None # Ensure next log gets a tag printed
 
-  dead_pid, dead_pname = parse_death(tag, message)
-  if dead_pid:
-    pids.remove(dead_pid)
-    linebuf  = '\n'
-    linebuf += colorize(' ' * (header_size - 1), bg=RED)
-    linebuf += ' Process %s (PID: %s) ended' % (dead_pname, dead_pid)
-    linebuf += '\n'
-    output_line(linebuf)
-    last_tag = None # Ensure next log gets a tag printed
+    # Make sure the backtrace is printed after a native crash
+    if tag == 'DEBUG':
+      bt_line = BACKTRACE_LINE.match(message.lstrip())
+      if bt_line is not None:
+        message = message.lstrip()
+        owner = app_pid
 
-  # Make sure the backtrace is printed after a native crash
-  if tag == 'DEBUG':
-    bt_line = BACKTRACE_LINE.match(message.lstrip())
-    if bt_line is not None:
-      message = message.lstrip()
-      owner = app_pid
+    if not args.all and owner not in pids:
+      continue
+    if level in LOG_LEVELS_MAP and LOG_LEVELS_MAP[level] < min_level:
+      continue
+    if args.ignored_tag and tag_in_tags_regex(tag, args.ignored_tag):
+      continue
+    if args.tag and not tag_in_tags_regex(tag, args.tag):
+      continue
 
-  if not args.all and owner not in pids:
-    continue
-  if level in LOG_LEVELS_MAP and LOG_LEVELS_MAP[level] < min_level:
-    continue
-  if args.ignored_tag and tag_in_tags_regex(tag, args.ignored_tag):
-    continue
-  if args.tag and not tag_in_tags_regex(tag, args.tag):
-    continue
+    linebuf = ''
 
-  linebuf = ''
+    if args.tag_width > 0:
+      # right-align tag title and allocate color if needed
+      if tag != last_tag or args.always_tags:
+        last_tag = tag
+        color = allocate_color(tag)
+        tag = tag[-args.tag_width:].rjust(args.tag_width)
+        linebuf += colorize(tag, fg=color)
+      else:
+        linebuf += ' ' * args.tag_width
+      linebuf += ' '
 
-  if args.tag_width > 0:
-    # right-align tag title and allocate color if needed
-    if tag != last_tag or args.always_tags:
-      last_tag = tag
-      color = allocate_color(tag)
-      tag = tag[-args.tag_width:].rjust(args.tag_width)
-      linebuf += colorize(tag, fg=color)
+    # write out level colored edge
+    if level in TAGTYPES:
+      linebuf += TAGTYPES[level]
     else:
-      linebuf += ' ' * args.tag_width
+      linebuf += ' ' + level + ' '
     linebuf += ' '
 
-  # write out level colored edge
-  if level in TAGTYPES:
-    linebuf += TAGTYPES[level]
-  else:
-    linebuf += ' ' + level + ' '
-  linebuf += ' '
-
-  if args.keep_fatal and level == 'F':
-    keep_line_on_stdout = True
-  else:
-    keep_line_on_stdout = False
-
-    matches_grep = does_match_grep(message, grep_words_with_color, False)
-    matches_igrep = does_match_grep(message, igrep_words_with_color, True)
-
-    matches_grepv = does_match_grepv(message, excluded_words, False)
-    matches_igrepv = does_match_grepv(message, iexcluded_words, True)
-
-    if matches_grep or matches_igrep:
+    if args.keep_fatal and level == 'F':
       keep_line_on_stdout = True
-    elif matches_grepv or matches_igrepv:
-      keep_line_on_stdout = False
     else:
-      if empty(grep_words_with_color) and empty(igrep_words_with_color):
+      keep_line_on_stdout = False
+
+      matches_grep = does_match_grep(message, grep_words_with_color, False)
+      matches_igrep = does_match_grep(message, igrep_words_with_color, True)
+
+      matches_grepv = does_match_grepv(message, excluded_words, False)
+      matches_igrepv = does_match_grepv(message, iexcluded_words, True)
+
+      if matches_grep or matches_igrep:
         keep_line_on_stdout = True
-      else:
+      elif matches_grepv or matches_igrepv:
         keep_line_on_stdout = False
+      else:
+        if empty(grep_words_with_color) and empty(igrep_words_with_color):
+          keep_line_on_stdout = True
+        else:
+          keep_line_on_stdout = False
 
-  words_to_color = []
-  if grep_words_with_color is not None:
-    words_to_color += grep_words_with_color
-  if highlight_words_with_color is not None:
-    words_to_color += highlight_words_with_color
+    words_to_color = []
+    if grep_words_with_color is not None:
+      words_to_color += grep_words_with_color
+    if highlight_words_with_color is not None:
+      words_to_color += highlight_words_with_color
 
-  iwords_to_color = []
-  if igrep_words_with_color is not None:
-    iwords_to_color += igrep_words_with_color
-  if ihighlight_words_with_color is not None:
-    iwords_to_color += ihighlight_words_with_color
+    iwords_to_color = []
+    if igrep_words_with_color is not None:
+      iwords_to_color += igrep_words_with_color
+    if ihighlight_words_with_color is not None:
+      iwords_to_color += ihighlight_words_with_color
 
-  # format tag message using rules
-  for matcher in RULES:
-    replace = RULES[matcher]
-    message = matcher.sub(replace, message)
+    # format tag message using rules
+    for matcher in RULES:
+      replace = RULES[matcher]
+      message = matcher.sub(replace, message)
 
-  if args.add_timestamp:
-    message = time + " | " + message
+    if args.add_timestamp:
+      message = time + " | " + message
 
-  message = highlight(message, words_to_color, ignore_case=False)
-  message = highlight(message, iwords_to_color, ignore_case=True)
+    message = highlight(message, words_to_color, ignore_case=False)
+    message = highlight(message, iwords_to_color, ignore_case=True)
 
-  lines = split_to_lines(message, width, header_size, header_size + args.extra_header_width)
+    lines = split_to_lines(message, width, header_size, header_size + args.extra_header_width)
 
-  linebuf += ('\n' + ' ' * (header_size + args.extra_header_width)).join(lines)
+    linebuf += ('\n' + ' ' * (header_size + args.extra_header_width)).join(lines)
 
-  output_line(linebuf.encode('utf-8'), keep_line_on_stdout)
+    output_line(linebuf.encode('utf-8'), keep_line_on_stdout)
 
+except KeyboardInterrupt:
+  print(RESET + EOL + '\n')
+  print('KeyboardInterrupt')

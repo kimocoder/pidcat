@@ -51,18 +51,27 @@ Here are details of all additional options provided:
                         {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN,
                         WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE,
                         BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix
-                        'BG_' is background color
+                        'BG_' is background color. You can have multiple '--
+                        grep' options in the command line, and if so, the
+                        command will grep all of the key words in all '--grep'
+                        options
   --hl HIGHLIGHT_WORDS  Words to highlight in log messages. Unlike --grep
                         option, this option will only highlight the specified
                         words with specified color but does not filter any
                         lines. Except this, the format and supported colors
-                        are the same as --grep
+                        are the same as --grep. You can have multiple '--hl'
+                        options in the command line, and if so, the command
+                        will highlight all of the key words in all '--hl'
+                        options
   --grepv GREPV_WORDS   Exclude lines with words from log messages. The format
                         and supported colors are the same as --grep. Note that
                         if both --grepv and --grep are provided and they
                         contain the same word, the line will always show,
                         which means --grep overwrites --grepv for the same
-                        word they both contain
+                        word they both contain. You can have multiple '--
+                        grepv' options in the command line, and if so, the
+                        command will exclude the lines containing any keywords
+                        in all '--grepv' options
   --igrep IGREP_WORDS   The same as --grep, just ignore case
   --ihl IHIGHLIGHT_WORDS
                         The same as --hl, just ignore case

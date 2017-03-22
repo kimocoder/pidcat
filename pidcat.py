@@ -205,7 +205,7 @@ def colorize_substr(str, start_index, end_index, color):
   colored_word = colorize(str[start_index:end_index], fg=color, ul=True)
   return str[:start_index] + colored_word + str[end_index:], start_index + len(colored_word)
 
-def highlight(line, words_to_color, ignore_case, prev_line, next_line):
+def highlight(line, words_to_color, ignore_case = False, prev_line = None, next_line = None):
   for word, color in words_to_color:
     if len(word) > 0:
       index = 0
@@ -219,15 +219,19 @@ def highlight(line, words_to_color, ignore_case, prev_line, next_line):
           break
         line, index = colorize_substr(line, index, index + len(word), color)
 
-      for i in range(1, len(word)):
-        if word == prev_line[-i:] + line[:len(word) - i]:
-          line, index = colorize_substr(line, 0, len(word) - i, color)
-          break
+      if not empty(prev_line):
+        for i in range(1, len(word)):
+          wrapped_word = prev_line[-i:] + line[:len(word) - i]
+          if (not ignore_case and word == wrapped_word) or (ignore_case and word.upper() == wrapped_word.upper()):
+            line, index = colorize_substr(line, 0, len(word) - i, color)
+            break
 
-      for i in range(1, len(word)):
-        if word == line[-i:] + next_line[:len(word) - i]:
-          line, index = colorize_substr(line, len(line) - i, len(line), color)
-          break
+      if not empty(next_line):
+        for i in range(1, len(word)):
+          wrapped_word = line[-i:] + next_line[:len(word) - i]
+          if (not ignore_case and word == wrapped_word) or (ignore_case and word.upper() == wrapped_word.upper()):
+            line, index = colorize_substr(line, len(line) - i, len(line), color)
+            break
 
   return line
 
@@ -593,6 +597,9 @@ while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.t
   if args.add_timestamp:
     message = time + " | " + message
 
+  message = highlight(message, words_to_color, ignore_case=False)
+  message = highlight(message, iwords_to_color, ignore_case=True)
+
   lines = split_to_lines(message, width, header_size, header_size + args.extra_header_width)
 
   if len(lines) > 0:
@@ -602,15 +609,8 @@ while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.t
       if n > 0:
         linebuf += '\n'
         linebuf += ' ' * (header_size + args.extra_header_width)
-      cur_line = line
-      if n < len(lines) - 1:
-        next_line = lines[n + 1]
-      else:
-        next_line = ''
-      line = highlight(line, words_to_color, False, prev_line, next_line)
-      line = highlight(line, iwords_to_color, True, prev_line, next_line)
       linebuf += line
       n += 1
-      prev_line = cur_line
 
   output_line(linebuf.encode('utf-8'), keep_line_on_stdout)
+

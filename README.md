@@ -13,7 +13,7 @@ On top of this, this fork will mainly provide these additional options
  * `--pipe`: it supports the script running in a pipe mode. For example, ``adb -d logcat | pidcat --pipe `tput cols`
                         com.testapp``. This is very useful if you want to use 3rd party tool to filter adb output, such as grepping, highlighting. For example, ``adb -d logcat
                         | h -i 'battery' | pidcat --pipe `tput cols`
-                        com.testapp``. [`h`][2] is a keyword hilight filter utility. The option needs the current terminal width provided as the parameter, which is easy to get in shell using command `` `tput cols` ``.
+                        com.testapp``. [`h`][2] is a keyword highlighting utility. The option needs the current terminal width provided as the parameter, which is easy to get in shell using command `` `tput cols` ``.
 
 Here is an example of the output of the following command:
 

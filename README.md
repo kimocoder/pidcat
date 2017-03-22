@@ -13,7 +13,7 @@ On top of this, this fork will mainly provide these additional options
  * `--pipe`: it supports the script running in a pipe mode. For example, ``adb -d logcat | pidcat --pipe `tput cols`
                         com.testapp``. This is very useful if you want to use 3rd party tool to filter adb output, such as grepping, highlighting. For example, ``adb -d logcat
                         | h -i 'battery' | pidcat --pipe `tput cols`
-                        com.testapp``. The option needs the current terminal width as the parameter which is easy to provide in shell using command `tput cols`.
+                        com.testapp``. [`h`][2] is a keyword hilight filter utility. The option needs the current terminal width provided as the parameter, which is easy to get in shell using command `` `tput cols` ``.
 
 Here is an example of the output of the following command:
 
@@ -95,7 +95,7 @@ Get the script:
  * Download the `pidcat.py` and place it on your PATH.
 
 
-Make sure that `adb` from the [Android SDK][2] is on your PATH. This script will
+Make sure that `adb` from the [Android SDK][3] is on your PATH. This script will
 not work unless this is that case. That means, when you type `adb` and press
 enter into your terminal something actually happens.
 
@@ -109,4 +109,5 @@ Include these lines in your `.bashrc`, `.zshrc` or `.bash_profile`.
 *Note:* `<path to Android SDK>` should be absolute and not relative.
 
  [1]: https://github.com/JakeWharton/pidcat
- [2]: http://developer.android.com/sdk/
+ [2]: https://github.com/paoloantinori/hhighlighter
+ [3]: http://developer.android.com/sdk/

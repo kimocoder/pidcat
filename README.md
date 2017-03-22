@@ -5,7 +5,7 @@ An update to Jake Wharton's excellent [pidcat][1] which filters `adb` result by 
 
     pidcat com.oprah.bees.android
 
-On top of this, this fork will mainly provide these additional options
+On top of this, this fork will mainly provide these additional features
  * `--timestamp`: add timestamp at the front of each line
  * `--grep`, `--highlight`, `--grepv`: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat`. This script will grep lines before `pidcat` cuts the original `adb` output line so as to not miss any lines in grepping. Moreover, you can specify different colors for each word in these options, which is very helpful in checking different word terms in massive log in sophisticated debugging. Corresponding case-ignored options are also provided: `--igrep`, `--ihighlight`, `--igrev`
  * `--header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines

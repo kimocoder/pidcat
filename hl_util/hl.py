@@ -32,7 +32,7 @@ if len(sys.argv) <= 1:
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
 color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW, 'BLUE': BLUE, 'MAGENTA': MAGENTA, 'CYAN': CYAN, 'WHITE': WHITE}
-contrast_color_dict = {BLACK: WHITE, RED: WHITE, GREEN: BLACK, YELLOW: BLACK, BLUE: WHITE, MAGENTA: BLACK, CYAN: BLACK, WHITE: BLACK}
+contrast_color_dict = {BLACK: WHITE, RED: WHITE, GREEN: BLACK, YELLOW: BLACK, BLUE: WHITE, MAGENTA: WHITE, CYAN: BLACK, WHITE: BLACK}
 
 def extract_color_from_word(word):
     w = word

@@ -10,6 +10,8 @@ On top of this, this fork will mainly provide these additional options
  * `--grep`, `--highlight`, `--grepv`: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat`. This script will grep lines before `pidcat` cuts the original `adb` output line so as to not miss any lines in grepping. Moreover, you can specify different colors for each word in these options, which is very helpful in checking different word terms in massive log in sophisticated debugging. Corresponding case-ignored options are also provided: `--igrep`, `--ihighlight`, `--igrev`
  * `--header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
  * `--tee`, `--tee-original`: it supports to output the filtered and un-filtered `pidcat` result to specified files, which is useful for checking later
+ * `--pipe`: it supports the script running in a pipe mode. It needs the current terminal width as the parameter which is easy to provide. For example, ``adb -d logcat | pidcat --pipe `tput cols`
+                        com.testapp``
 
 Here is an example of the output of the following command:
 
@@ -25,7 +27,8 @@ You could notice that
 Here are details of all additional options provided:
 <pre>
   --timestamp           Prepend each line of output with the current time.
-  --header-width N      Width of customized log header. If you have your own
+  --extra-header-width N
+                        Width of customized log header. If you have your own
                         header besides Android log header, this option will
                         further indent your wrapped lines with additional
                         width
@@ -56,6 +59,9 @@ Here are details of all additional options provided:
                         The same as --highlight, just ignore case
   --igrepv IGREPV_WORDS
                         The same as --grepv, just ignore case
+  --keep-all-fatal      Do not filter any fatal logs from pidcat output. This
+                        is quite helpful to avoid ignoring information about
+                        exceptions, crash stacks and assertion failures
   --tee FILE_NAME       Besides stdout output, also output the filtered result
                         (after grep/grepv) to the file
   --tee-original ORIGINAL_FILE_NAME
@@ -64,9 +70,19 @@ Here are details of all additional options provided:
   --tee-adb ADB_OUTPUT_FILE_NAME
                         Output original adb result (raw adb output) to the
                         file
-  --keep-all-fatal      Do not filter any fatal logs from pidcat output. This
-                        is quite helpful to avoid ignoring information about
-                        exceptions, crash stacks and assertion failures
+  --pipe TERMINAL_WIDTH_FOR_PIPE_MODE
+                        Note: you need to give terminal width as the value,
+                        just put "`tput cols`" here. When running in pipe
+                        mode, the script will take input from "stdin" rather
+                        than launching adb itself. The usage becomes something
+                        like "adb -d logcat | pidcat --pipe `tput cols`
+                        com.testapp". This is very useful when you want to
+                        apply any third-party scripts on the adb output before
+                        pidcat cutting each line, like using 3rd-party scripts
+                        to grep or hilight with colors (such as using 'ack' or
+                        'h' command) to keywords. For example, "adb -d logcat
+                        | h -i 'battery' | pidcat --pipe `tput cols`
+                        com.testapp"
 </pre>
 
 Install

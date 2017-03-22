@@ -46,18 +46,20 @@ parser.add_argument('-t', '--tag', dest='tag', action='append', help='Filter out
 parser.add_argument('-i', '--ignore-tag', dest='ignored_tag', action='append', help='Filter output by ignoring specified tag(s)')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print the version number and exit')
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
-parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', help='Prepend each line of output with the current time.')
-parser.add_argument('--header-width', metavar='N', dest='header_width', type=int, default=0, help='Width of customized log header. If you have your own header besides Android log header, this option will further indent your wrapped lines with additional width')
+parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', default=False, help='Prepend each line of output with the current time.')
+parser.add_argument('--extra-header-width', metavar='N', dest='extra_header_width', type=int, default=0, help='Width of customized log header. If you have your own header besides Android log header, this option will further indent your wrapped lines with additional width')
 parser.add_argument('--grep', dest='grep_words', type=str, default='', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\"word1\\|word2\\\\CYAN\" means to filter out all lines containing either word1 or word2, and word1 will appear in default color RED while word2 will be in CYAN. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE}')
 parser.add_argument('--highlight', dest='highlight_words', type=str, default='', help='Words to highlight in log messages. Unlike --grep option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as --grep')
 parser.add_argument('--grepv', dest='grepv_words', type=str, default='', help='Exclude lines with words from log messages. The format and supported colors are the same as --grep. Note that if both --grepv and --grep are provided and they contain the same word, the line will always show, which means --grep overwrites --grepv for the same word they both contain')
 parser.add_argument('--igrep', dest='igrep_words', type=str, default='', help='The same as --grep, just ignore case')
 parser.add_argument('--ihighlight', dest='ihighlight_words', type=str, default='', help='The same as --highlight, just ignore case')
 parser.add_argument('--igrepv', dest='igrepv_words', type=str, default='', help='The same as --grepv, just ignore case')
+parser.add_argument('--keep-all-fatal', dest='keep_fatal', action='store_true', help='Do not filter any fatal logs from pidcat output. This is quite helpful to avoid ignoring information about exceptions, crash stacks and assertion failures')
 parser.add_argument('--tee', dest='file_name', type=str, default='', help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
 parser.add_argument('--tee-original', dest='original_file_name', type=str, default='', help='Besides stdout output, also output the unfiltered result (all pidcat-formatted lines) to the file')
 parser.add_argument('--tee-adb', dest='adb_output_file_name', type=str, default='', help='Output original adb result (raw adb output) to the file')
-parser.add_argument('--keep-all-fatal', dest='keep_fatal', action='store_true', help='Do not filter any fatal logs from pidcat output. This is quite helpful to avoid ignoring information about exceptions, crash stacks and assertion failures')
+parser.add_argument('--pipe', dest='terminal_width_for_pipe_mode', type=int, default=-1, help='Note: you need to give terminal width as the value, just put \"`tput cols`\" here. When running in pipe mode, the script will take input from \"stdin\" rather than launching adb itself. The usage becomes something like \"adb -d logcat | pidcat --pipe `tput cols` com.testapp\". This is very useful when you want to apply any third-party scripts on the adb output before pidcat cutting each line, like using 3rd-party scripts to grep or hilight with colors (such as using \'ack\' or \'h\' command) to keywords. For example, \"adb -d logcat | h -i \'battery\' | pidcat --pipe `tput cols` com.testapp\"')
+
 
 args = parser.parse_args()
 min_level = LOG_LEVELS_MAP[args.min_level.upper()]
@@ -136,17 +138,19 @@ named_processes = filter(lambda package: package.find(":") != -1, package)
 # Convert default process names from <package>: (cli notation) to <package> (android notation) in the exact names match group.
 named_processes = map(lambda package: package if package.find(":") != len(package) - 1 else package[:-1], named_processes)
 
-header_size = args.tag_width + 1 + 3 + 1 # space, level, space
+header_size = args.tag_width + 1 + 3 + 1  # space, level, space
 
-width = -1
-try:
-  # Get the current terminal width
-  import fcntl, termios, struct
-  h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
-except:
-  pass
+width = args.terminal_width_for_pipe_mode
+if width == -1:
+  try:
+    # Get the current terminal width
+    import fcntl, termios, struct
+    h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
+  except:
+    pass
 
 RESET = '\033[0m'
+EOL = '\033[K'
 
 def termcolor(fg=None, bg=None, ul=False):
   codes = []
@@ -227,36 +231,68 @@ def highlight(line, words_to_color, ignore_case, prev_line, next_line):
 
   return line
 
-def indent_wrap(message):
-  if width == -1:
+ANSI_ESC_PATTERN = r'\x1b\[([0-9,A-Z]{1,2}(;[0-9]{1,2})*(;[0-9]{3})?)?[m|K]'
+
+# All ANSI escape codes are not counted in this `substr` function but are kept in the substring
+def substr(unstripped_str, start, end):
+  res = ''
+  unstripped_i = 0
+  idx = 0
+  cur_esc = ''
+  while unstripped_i < len(unstripped_str):
+    match_res = re.match(ANSI_ESC_PATTERN, unstripped_str[unstripped_i:])
+    if match_res:
+      cur_esc = unstripped_str[match_res.start() + unstripped_i:match_res.end() + unstripped_i]
+      if idx >= start and idx <= end:
+        res += cur_esc
+      unstripped_i += match_res.end()
+    else:
+      if idx >= start and idx < end:
+        if len(cur_esc) > 0 and idx == start and len(res) == 0:
+          res += cur_esc
+        res += unstripped_str[unstripped_i]
+      unstripped_i += 1
+      idx += 1
+
+  if len(res) > 0 and res[-len(RESET):] != RESET and res[-len(EOL):] != EOL:
+    res += RESET
+  return res
+
+def indent_wrap(message, total_width, subsequent_indent_width):
+  if total_width == -1:
     return message
-  message = message.replace('\t', '    ')
-  wrap_area = width - header_size - args.header_width
+
+  message = message.replace('\t', ' ' * 4)
+  stripped_message = re.sub(ANSI_ESC_PATTERN, '', message)
+
+  wrap_area = total_width - subsequent_indent_width
   messagebuf = ''
   current = 0
-  while current < len(message):
-    next = min(current + wrap_area, len(message))
-    messagebuf += message[current:next]
+  while current < len(stripped_message):
+    next = min(current + wrap_area, len(stripped_message))
+    messagebuf += substr(message, current, next)
     if next < len(message):
       messagebuf += '\n'
-      messagebuf += ' ' * (header_size +  + args.header_width)
+      messagebuf += ' ' * subsequent_indent_width
     current = next
   return messagebuf
 
-def split_to_lines(message):
-  if width == -1:
+def split_to_lines(message, total_width, initial_indent_width, subsequent_indent_width):
+  if total_width == -1:
     return message
   message = message.replace('\t', '    ')
   lines = []
   current = 0
   while current < len(message):
     if current == 0:
-      wrap_area = width - header_size
+      wrap_area = total_width - initial_indent_width
     else:
-      wrap_area = width - header_size - args.header_width
+      wrap_area = total_width - subsequent_indent_width
     next = min(current + wrap_area, len(message))
-    lines.append(message[current:next])
+    lines.append(substr(message, current, next))
     current = next
+  if len(lines) > 0 and len(lines[len(lines) - 1]) == 0:
+    del lines[-1]
   return lines
 
 
@@ -414,9 +450,14 @@ while True:
       seen_pids = True
       pids.add(pid)
 
-while adb.poll() is None:
+if args.terminal_width_for_pipe_mode is not -1:
+  input = sys.stdin
+else:
+  input = adb.stdout
+
+while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.terminal_width_for_pipe_mode is not -1:
   try:
-    line = adb.stdout.readline().decode('utf-8', 'replace').strip()
+    line = input.readline().decode('utf-8', 'replace').strip()
     if tee_adb_file is not None:
       tee_adb_file.write(line.encode('utf-8'))
       tee_adb_file.write('\n')
@@ -446,7 +487,7 @@ while adb.poll() is None:
 
       linebuf  = '\n'
       linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
-      linebuf += indent_wrap(' Process %s created for %s\n' % (line_package, target))
+      linebuf += indent_wrap(' Process %s created for %s\n' % (line_package, target), width, header_size + args.extra_header_width)
       linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
       linebuf += ' PID: %s   UID: %s   GIDs: %s' % (line_pid, line_uid, line_gids)
       linebuf += '\n'
@@ -540,7 +581,7 @@ while adb.poll() is None:
   if args.add_timestamp:
     message = time + " | " + message
 
-  lines = split_to_lines(message)
+  lines = split_to_lines(message, width, header_size, header_size + args.extra_header_width)
 
   if len(lines) > 0:
     n = 0
@@ -548,7 +589,7 @@ while adb.poll() is None:
     for line in lines:
       if n > 0:
         linebuf += '\n'
-        linebuf += ' ' * (header_size + + args.header_width)
+        linebuf += ' ' * (header_size + args.extra_header_width)
       cur_line = line
       if n < len(lines) - 1:
         next_line = lines[n + 1]

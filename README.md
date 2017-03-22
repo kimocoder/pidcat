@@ -10,8 +10,10 @@ On top of this, this fork will mainly provide these additional options
  * `--grep`, `--highlight`, `--grepv`: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat`. This script will grep lines before `pidcat` cuts the original `adb` output line so as to not miss any lines in grepping. Moreover, you can specify different colors for each word in these options, which is very helpful in checking different word terms in massive log in sophisticated debugging. Corresponding case-ignored options are also provided: `--igrep`, `--ihighlight`, `--igrev`
  * `--header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
  * `--tee`, `--tee-original`: it supports to output the filtered and un-filtered `pidcat` result to specified files, which is useful for checking later
- * `--pipe`: it supports the script running in a pipe mode. It needs the current terminal width as the parameter which is easy to provide. For example, ``adb -d logcat | pidcat --pipe `tput cols`
-                        com.testapp``
+ * `--pipe`: it supports the script running in a pipe mode. For example, ``adb -d logcat | pidcat --pipe `tput cols`
+                        com.testapp``. This is very useful if you want to use 3rd party tool to filter adb output, such as grepping, highlighting. For example, ``adb -d logcat
+                        | h -i 'battery' | pidcat --pipe `tput cols`
+                        com.testapp``. The option needs the current terminal width as the parameter which is easy to provide in shell using command `tput cols`.
 
 Here is an example of the output of the following command:
 

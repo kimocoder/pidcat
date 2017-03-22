@@ -471,11 +471,25 @@ while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.t
   if bug_line is not None:
     continue
 
-  log_line = LOG_LINE.match(line)
-  if log_line is None:
-    continue
+  # LOG_LINE = re.compile(r'^[0-9-]+ ([0-9:.]+) ([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
+  LOG_LINE_NO_TIME = re.compile(r'([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
+  LOG_LINE_DEFAULT_FMT = re.compile(r'^[0-9-]+ ([0-9:.]+)\s*([0-9]+)\s*[0-9]+ ([A-Z]) (.+?): (.*?)$')
 
-  time, level, tag, owner, message = log_line.groups()
+  log_line = LOG_LINE.match(line)
+  if log_line:
+    time, level, tag, owner, message = log_line.groups()
+  else:
+    log_line = LOG_LINE_NO_TIME.match(line)
+    if log_line:
+      level, tag, owner, message = log_line.groups()
+      time = ''
+    else:
+      log_line = LOG_LINE_DEFAULT_FMT.match(line)
+      if log_line:
+        time, owner, level, tag, message = log_line.groups()
+      else:
+        continue
+
   tag = tag.strip()
   start = parse_start_proc(line)
   if start:

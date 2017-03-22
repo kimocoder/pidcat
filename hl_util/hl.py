@@ -22,6 +22,10 @@ args = parser.parse_args()
 
 file_path = args.file
 
+if len(sys.argv) <= 1:
+    parser.print_help()
+    sys.exit(0)
+
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
 color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW, 'BLUE': BLUE, 'MAGENTA': MAGENTA, 'CYAN': CYAN, 'WHITE': WHITE}

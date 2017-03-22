@@ -150,7 +150,9 @@ width = args.terminal_width_for_pipe_mode
 if width == -1:
   try:
     # Get the current terminal width
-    import fcntl, termios, struct
+    import fcntl
+    import termios
+    import struct
     h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
   except:
     width = 100
@@ -294,12 +296,12 @@ def indent_wrap(message, total_width, subsequent_indent_width):
   messagebuf = ''
   current = 0
   while current < len(stripped_message):
-    next = min(current + wrap_area, len(stripped_message))
-    messagebuf += substr(message, current, next)
-    if next < len(message):
+    next_pos = min(current + wrap_area, len(stripped_message))
+    messagebuf += substr(message, current, next_pos)
+    if next_pos < len(message):
       messagebuf += '\n'
       messagebuf += ' ' * subsequent_indent_width
-    current = next
+    current = next_pos
   return messagebuf
 
 def split_to_lines(message, total_width, initial_indent_width, subsequent_indent_width):
@@ -313,9 +315,9 @@ def split_to_lines(message, total_width, initial_indent_width, subsequent_indent
       wrap_area = total_width - initial_indent_width
     else:
       wrap_area = total_width - subsequent_indent_width
-    next = min(current + wrap_area, len(message))
-    lines.append(substr(message, current, next))
-    current = next
+    next_pos = min(current + wrap_area, len(message))
+    lines.append(substr(message, current, next_pos))
+    current = next_pos
   if len(lines) > 0 and len(lines[len(lines) - 1]) == 0:
     del lines[-1]
   return lines

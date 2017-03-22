@@ -1,13 +1,14 @@
 #!/usr/bin/python -u
 
 import argparse
+import glob
 import re
 import sys
 
 __version__ = '1.0.0'
 
 parser = argparse.ArgumentParser(description='Highlight keywords in a file or stdin with different specified colors')
-parser.add_argument('file', nargs='*', help='File path', default=None)
+parser.add_argument('files', nargs='*', help='File path', default=None)
 parser.add_argument('--grep', dest='grep_words', type=str, default='', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\"word1\\|word2\\\\CYAN\" means to filter out all lines containing either word1 or word2, and word1 will appear in default color RED while word2 will be in CYAN. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix \'BG_\' is background color')
 parser.add_argument('--hl', dest='highlight_words', type=str, default='', help='Words to highlight in log messages. Unlike --grep option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as --grep')
 parser.add_argument('--grepv', dest='grepv_words', type=str, default='', help='Exclude lines with words from log messages. The format and supported colors are the same as --grep. Note that if both --grepv and --grep are provided and they contain the same word, the line will always show, which means --grep overwrites --grepv for the same word they both contain')
@@ -20,7 +21,9 @@ parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + _
 
 args = parser.parse_args()
 
-file_path = args.file
+file_paths = []
+for path in args.files:
+    file_paths += glob.glob(path)
 
 if len(sys.argv) <= 1:
     parser.print_help()
@@ -29,20 +32,7 @@ if len(sys.argv) <= 1:
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
 color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW, 'BLUE': BLUE, 'MAGENTA': MAGENTA, 'CYAN': CYAN, 'WHITE': WHITE}
-contrast_color_dict = {BLACK: WHITE, RED: BLACK, GREEN: BLACK, YELLOW: BLACK, BLUE: WHITE, MAGENTA: BLACK, CYAN: BLACK, WHITE: BLACK}
-
-width = args.terminal_width
-if width == -1:
-    try:
-        # Get the current terminal width
-        import fcntl
-        import termios
-        import struct
-        h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
-    except:
-        width = 100
-        print('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. Please just provide \'--pipe=`tput cols`\' as an option')
-
+contrast_color_dict = {BLACK: WHITE, RED: WHITE, GREEN: BLACK, YELLOW: BLACK, BLUE: WHITE, MAGENTA: BLACK, CYAN: BLACK, WHITE: BLACK}
 
 def extract_color_from_word(word):
     w = word
@@ -216,72 +206,96 @@ def split_to_lines(message, total_width, initial_indent_width, subsequent_indent
             wrap_area = total_width - initial_indent_width
         else:
             wrap_area = total_width - subsequent_indent_width
-        next = min(current + wrap_area, len(message))
-        lines.append(substr(message, current, next))
-        current = next
+        next_pos = min(current + wrap_area, len(message))
+        lines.append(substr(message, current, next_pos))
+        current = next_pos
     if len(lines) > 0 and len(lines[len(lines) - 1]) == 0:
         del lines[-1]
     return lines
 
 
-f = None
-if empty(file_path) or empty(file_path[0]):
-    input_src = sys.stdin
-else:
-    try:
-        f = open(file_path[0], 'r')
-        input_src = f
-    except (OSError, IOError) as e:
-        print('Can\'t open file \'' + file_path + '\'')
-        sys.exit(-1)
+def print_error(error_msg):
+    print('\n' + colorize(error_msg, fg=WHITE, bg=RED, ul=True) + '\n')
 
-while True:
-    try:
-        line = input_src.readline().decode('utf-8')
-        if not line:
-            break
-    except KeyboardInterrupt:
-        break
 
-    matches_grep = does_match_grep(line, grep_words_with_color, False)
-    matches_igrep = does_match_grep(line, igrep_words_with_color, True)
+def run(input_src, file_path):
+    while True:
+        try:
+            line = input_src.readline().decode('utf-8')
+            if not line:
+                break
+        except KeyboardInterrupt:
+            return -1
+        except UnicodeDecodeError:
+            print_error('Can\'t decode line as utf-8 for file \'' + file_path + '\'')
 
-    matches_grepv = does_match_grepv(line, excluded_words, False)
-    matches_igrepv = does_match_grepv(line, iexcluded_words, True)
+        matches_grep = does_match_grep(line, grep_words_with_color, False)
+        matches_igrep = does_match_grep(line, igrep_words_with_color, True)
 
-    if matches_grep or matches_igrep:
-        pass
-    elif matches_grepv or matches_igrepv:
-        continue
-    else:
-        if empty(grep_words_with_color) and empty(igrep_words_with_color):
+        matches_grepv = does_match_grepv(line, excluded_words, False)
+        matches_igrepv = does_match_grepv(line, iexcluded_words, True)
+
+        if matches_grep or matches_igrep:
             pass
-        else:
+        elif matches_grepv or matches_igrepv:
             continue
+        else:
+            if empty(grep_words_with_color) and empty(igrep_words_with_color):
+                pass
+            else:
+                continue
 
-    words_to_color = []
-    if grep_words_with_color is not None:
-        words_to_color += grep_words_with_color
-    if highlight_words_with_color is not None:
-        words_to_color += highlight_words_with_color
+        words_to_color = []
+        if grep_words_with_color is not None:
+            words_to_color += grep_words_with_color
+        if highlight_words_with_color is not None:
+            words_to_color += highlight_words_with_color
 
-    iwords_to_color = []
-    if igrep_words_with_color is not None:
-        iwords_to_color += igrep_words_with_color
-    if ihighlight_words_with_color is not None:
-        iwords_to_color += ihighlight_words_with_color
+        iwords_to_color = []
+        if igrep_words_with_color is not None:
+            iwords_to_color += igrep_words_with_color
+        if ihighlight_words_with_color is not None:
+            iwords_to_color += ihighlight_words_with_color
 
-    line = highlight(line, words_to_color, ignore_case=False)
-    line = highlight(line, iwords_to_color, ignore_case=True)
+        line = highlight(line, words_to_color, ignore_case=False)
+        line = highlight(line, iwords_to_color, ignore_case=True)
 
-    if args.terminal_width != -1 or args.wrap_indent_width != 0:
-        indent = args.wrap_indent_width
-        lines = split_to_lines(line, width, 0, indent)
-        linebuf = ('\n' + ' ' * indent).join(lines)
-    else:
-        linebuf = line
+        if args.terminal_width != -1 or args.wrap_indent_width != 0:
 
-    print(linebuf.encode('utf-8'))
+            width = args.terminal_width
+            if width == -1:
+                try:
+                    # Get the current terminal width
+                    import fcntl
+                    import termios
+                    import struct
+                    h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
+                except:
+                    width = 100
+                    print_error('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. '
+                        'Please just provide \'--wrap=`tput cols`\' as an option')
 
-if f is not None:
-    f.close()
+            indent = args.wrap_indent_width
+            lines = split_to_lines(line, width, 0, indent)
+            linebuf = ('\n' + ' ' * indent).join(lines)
+        else:
+            linebuf = line
+
+        sys.stdout.write(linebuf.encode('utf-8'))
+    return 0
+
+
+if empty(file_paths) or empty(file_paths[0]):
+    run(sys.stdin, 'stdin')
+else:
+    for path in file_paths:
+        if not empty(path):
+            try:
+                f = open(path, 'r')
+            except (OSError, IOError) as e:
+                print_error('Can\'t open file \'' + path + '\'!!')
+                continue
+            res = run(f, path)
+            f.close()
+            if res is -1:
+                sys.exit(-1)

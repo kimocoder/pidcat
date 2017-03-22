@@ -48,7 +48,7 @@ parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + _
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
 parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', default=False, help='Prepend each line of output with the current time.')
 parser.add_argument('--extra-header-width', metavar='N', dest='extra_header_width', type=int, default=0, help='Width of customized log header. If you have your own header besides Android log header, this option will further indent your wrapped lines with additional width')
-parser.add_argument('--grep', dest='grep_words', type=str, default='', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\"word1\\|word2\\\\CYAN\" means to filter out all lines containing either word1 or word2, and word1 will appear in default color RED while word2 will be in CYAN. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE}')
+parser.add_argument('--grep', dest='grep_words', type=str, default='', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\"word1\\|word2\\\\CYAN\" means to filter out all lines containing either word1 or word2, and word1 will appear in default color RED while word2 will be in CYAN. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix \'BG_\' is background color')
 parser.add_argument('--highlight', dest='highlight_words', type=str, default='', help='Words to highlight in log messages. Unlike --grep option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as --grep')
 parser.add_argument('--grepv', dest='grepv_words', type=str, default='', help='Exclude lines with words from log messages. The format and supported colors are the same as --grep. Note that if both --grepv and --grep are provided and they contain the same word, the line will always show, which means --grep overwrites --grepv for the same word they both contain')
 parser.add_argument('--igrep', dest='igrep_words', type=str, default='', help='The same as --grep, just ignore case')
@@ -67,19 +67,25 @@ min_level = LOG_LEVELS_MAP[args.min_level.upper()]
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
 color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW, 'BLUE': BLUE, 'MAGENTA': MAGENTA, 'CYAN': CYAN, 'WHITE': WHITE}
+contrast_color_dict = {BLACK: WHITE, RED: BLACK, GREEN: BLACK, YELLOW: BLACK, BLUE: WHITE, MAGENTA: BLACK, CYAN: BLACK, WHITE: BLACK}
 
 def extract_color_from_word(word):
   w = word
   c = RED
+  bg = False
   delimiter='\\'
   index = word.rfind(delimiter)
   if index is not -1:
     w = word[0:index]
     try:
-      c = color_dict[word[index + len(delimiter):].upper()]
+      color_word = word[index + len(delimiter):].upper()
+      if color_word[:3] == 'BG_':
+        bg = True
+        color_word = color_word[3:]
+      c = color_dict[color_word]
     except KeyError:
       c = RED
-  return w, c
+  return w, c, bg
 
 
 def parse_words_with_color(words):
@@ -189,7 +195,7 @@ def output_line(line, keep_line_on_stdout = True):
 
 def does_match_grep(message, grep_words_with_color, ignore_case):
   if not empty(grep_words_with_color):
-    for word,color in grep_words_with_color:
+    for word, color, bg in grep_words_with_color:
       if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
         return True
   return False
@@ -201,12 +207,24 @@ def does_match_grepv(message, grepv_words, ignore_case):
         return True
   return False
 
-def colorize_substr(str, start_index, end_index, color):
-  colored_word = colorize(str[start_index:end_index], fg=color, ul=True)
+def colorize_substr(str, start_index, end_index, color, bg):
+  fg_color = None
+  bg_color = None
+  ul = False
+  if bg:
+    bg_color = color
+    try:
+      fg_color = contrast_color_dict[color]
+    except KeyError:
+      pass
+  else:
+    fg_color = color
+    ul = True
+  colored_word = colorize(str[start_index:end_index], fg_color, bg_color, ul=ul)
   return str[:start_index] + colored_word + str[end_index:], start_index + len(colored_word)
 
 def highlight(line, words_to_color, ignore_case = False, prev_line = None, next_line = None):
-  for word, color in words_to_color:
+  for word, color, bg in words_to_color:
     if len(word) > 0:
       index = 0
       while True:
@@ -217,20 +235,20 @@ def highlight(line, words_to_color, ignore_case = False, prev_line = None, next_
             index = line.index(word, index)
         except ValueError:
           break
-        line, index = colorize_substr(line, index, index + len(word), color)
+        line, index = colorize_substr(line, index, index + len(word), color, bg)
 
       if not empty(prev_line):
         for i in range(1, len(word)):
           wrapped_word = prev_line[-i:] + line[:len(word) - i]
           if (not ignore_case and word == wrapped_word) or (ignore_case and word.upper() == wrapped_word.upper()):
-            line, index = colorize_substr(line, 0, len(word) - i, color)
+            line, index = colorize_substr(line, 0, len(word) - i, color, bg)
             break
 
       if not empty(next_line):
         for i in range(1, len(word)):
           wrapped_word = line[-i:] + next_line[:len(word) - i]
           if (not ignore_case and word == wrapped_word) or (ignore_case and word.upper() == wrapped_word.upper()):
-            line, index = colorize_substr(line, len(line) - i, len(line), color)
+            line, index = colorize_substr(line, len(line) - i, len(line), color, bg)
             break
 
   return line

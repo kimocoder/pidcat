@@ -17,7 +17,13 @@ On top of this, this fork will mainly provide these additional features
 
 Here is an example of the output of the following command:
 
-    pidcat --timestamp --header-width=15 --highlight="CDMA\|BATTERY\\magenta\|timeout\\white\|level=100\\cyan"
+    pidcat --timestamp --ihighlight="oslog\|logs\|sensor\\cyan\|queuebatch\\bg_blue\|state\\white\|latency\\bg_green\|enable\\magenta" --highlight="screen\\yellow\|far\\bg_yellow\|event\\bg_ack"
+
+![Example screen](screen.png)
+
+Another example using pipe mode with 3rd-party [`h`][2] tool:
+
+    adb logcat | h health level logs intent upload android | pidcat --pipe=`tput cols`
 
 ![Example screen](screen.png)
 

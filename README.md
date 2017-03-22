@@ -7,7 +7,7 @@ An update to Jake Wharton's excellent [pidcat][1] which filters `adb` result by 
 
 On top of this, this fork will mainly provide these additional features
  * `--timestamp`: add timestamp at the front of each line
- * `--grep`, `--highlight`, `--grepv`: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat`. This script will grep lines before `pidcat` cuts the original `adb` output line so as to not miss any lines in grepping. Moreover, you can specify different colors for each word in these options, which is very helpful in checking different word terms in massive log in sophisticated debugging. Corresponding case-ignored options are also provided: `--igrep`, `--ihighlight`, `--igrev`
+ * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat`. This script will grep lines before `pidcat` cuts the original `adb` output line so as to not miss any lines in grepping. Moreover, you can specify different colors for each word in these options, which is very helpful in checking different word terms in massive log in sophisticated debugging. Corresponding case-ignored options are also provided: `--igrep`, `--ihl`, `--igrev`
  * `--header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
  * `--tee`, `--tee-original`: it supports to output the filtered and un-filtered `pidcat` result to specified files, which is useful for checking later
  * `--pipe`: it supports the script running in a pipe mode. For example, ``adb -d logcat | pidcat --pipe `tput cols`
@@ -17,7 +17,7 @@ On top of this, this fork will mainly provide these additional features
 
 Here is an example of the output of the following command:
 
-    pidcat --timestamp --ihighlight="oslog\|logs\|sensor\\cyan\|queuebatch\\bg_blue\|state\\white\|latency\\bg_green\|enable\\magenta" --highlight="screen\\yellow\|far\\bg_yellow\|event\\bg_ack"
+    pidcat --timestamp --ihl="oslog\|logs\|sensor\\cyan\|queuebatch\\bg_blue\|state\\white\|latency\\bg_green\|enable\\magenta" --hl="screen\\yellow\|far\\bg_yellow\|event\\bg_ack"
 
 ![Example screen](screen.png)
 
@@ -28,7 +28,7 @@ Another example using pipe mode with 3rd-party [`h`][2] tool:
 ![Example screen](screen.png)
 
 You could notice that
- * The words are highlighted in specified colors, even the cut words due to line wrapping (`--highlight`);
+ * The words are highlighted in specified colors, even the cut words due to line wrapping (`--hl`);
  * Timestamps are headed in each line (`--timestamp`);
  * Additional indentation spaces are added to align the wrapped lines to the right of timestamp headers (`--header-width`);
 
@@ -49,9 +49,10 @@ Here are details of all additional options provided:
                         and word1 will appear in default color RED while word2
                         will be in CYAN. Supported colors (case ignored):
                         {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN,
-                        WHITE}
-  --highlight HIGHLIGHT_WORDS
-                        Words to highlight in log messages. Unlike --grep
+                        WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE,
+                        BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix
+                        'BG_' is background color
+  --hl HIGHLIGHT_WORDS  Words to highlight in log messages. Unlike --grep
                         option, this option will only highlight the specified
                         words with specified color but does not filter any
                         lines. Except this, the format and supported colors
@@ -63,8 +64,8 @@ Here are details of all additional options provided:
                         which means --grep overwrites --grepv for the same
                         word they both contain
   --igrep IGREP_WORDS   The same as --grep, just ignore case
-  --ihighlight IHIGHLIGHT_WORDS
-                        The same as --highlight, just ignore case
+  --ihl IHIGHLIGHT_WORDS
+                        The same as --hl, just ignore case
   --igrepv IGREPV_WORDS
                         The same as --grepv, just ignore case
   --keep-all-fatal      Do not filter any fatal logs from pidcat output. This

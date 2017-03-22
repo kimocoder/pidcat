@@ -49,10 +49,10 @@ parser.add_argument('-a', '--all', dest='all', action='store_true', default=Fals
 parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', default=False, help='Prepend each line of output with the current time.')
 parser.add_argument('--extra-header-width', metavar='N', dest='extra_header_width', type=int, default=0, help='Width of customized log header. If you have your own header besides Android log header, this option will further indent your wrapped lines with additional width')
 parser.add_argument('--grep', dest='grep_words', type=str, default='', help='Filter lines with words in log messages. The words are delimited with \'\\|\', where each word can be tailed with a color initialed with \'\\\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\"word1\\|word2\\\\CYAN\" means to filter out all lines containing either word1 or word2, and word1 will appear in default color RED while word2 will be in CYAN. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix \'BG_\' is background color')
-parser.add_argument('--highlight', dest='highlight_words', type=str, default='', help='Words to highlight in log messages. Unlike --grep option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as --grep')
+parser.add_argument('--hl', dest='highlight_words', type=str, default='', help='Words to highlight in log messages. Unlike --grep option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as --grep')
 parser.add_argument('--grepv', dest='grepv_words', type=str, default='', help='Exclude lines with words from log messages. The format and supported colors are the same as --grep. Note that if both --grepv and --grep are provided and they contain the same word, the line will always show, which means --grep overwrites --grepv for the same word they both contain')
 parser.add_argument('--igrep', dest='igrep_words', type=str, default='', help='The same as --grep, just ignore case')
-parser.add_argument('--ihighlight', dest='ihighlight_words', type=str, default='', help='The same as --highlight, just ignore case')
+parser.add_argument('--ihl', dest='ihighlight_words', type=str, default='', help='The same as --hl, just ignore case')
 parser.add_argument('--igrepv', dest='igrepv_words', type=str, default='', help='The same as --grepv, just ignore case')
 parser.add_argument('--keep-all-fatal', dest='keep_fatal', action='store_true', help='Do not filter any fatal logs from pidcat output. This is quite helpful to avoid ignoring information about exceptions, crash stacks and assertion failures')
 parser.add_argument('--tee', dest='file_name', type=str, default='', help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
@@ -73,7 +73,7 @@ def extract_color_from_word(word):
   w = word
   c = RED
   bg = False
-  delimiter='\\'
+  delimiter = '\\'
   index = word.rfind(delimiter)
   if index is not -1:
     w = word[0:index]
@@ -160,8 +160,10 @@ EOL = '\033[K'
 
 def termcolor(fg=None, bg=None, ul=False):
   codes = []
-  if fg is not None: codes.append('3%d' % fg)
-  if bg is not None: codes.append('10%d' % bg)
+  if fg is not None:
+    codes.append('3%d' % fg)
+  if bg is not None:
+    codes.append('10%d' % bg)
   return '\033[%s%sm' % ('4;' if ul else '', ';'.join(codes) if codes else '')
 
 def colorize(message, fg=None, bg=None, ul=False):
@@ -223,7 +225,7 @@ def colorize_substr(str, start_index, end_index, color, bg):
   colored_word = colorize(str[start_index:end_index], fg_color, bg_color, ul=ul)
   return str[:start_index] + colored_word + str[end_index:], start_index + len(colored_word)
 
-def highlight(line, words_to_color, ignore_case = False, prev_line = None, next_line = None):
+def highlight(line, words_to_color, ignore_case=False, prev_line=None, next_line=None):
   for word, color, bg in words_to_color:
     if len(word) > 0:
       index = 0
@@ -475,13 +477,13 @@ while True:
       pids.add(pid)
 
 if args.terminal_width_for_pipe_mode is not -1:
-  input = sys.stdin
+  input_src = sys.stdin
 else:
-  input = adb.stdout
+  input_src = adb.stdout
 
 while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.terminal_width_for_pipe_mode is not -1:
   try:
-    line = input.readline().decode('utf-8', 'replace').strip()
+    line = input_src.readline().decode('utf-8', 'replace').strip()
     if tee_adb_file is not None:
       tee_adb_file.write(line.encode('utf-8'))
       tee_adb_file.write('\n')
@@ -595,13 +597,13 @@ while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.t
       else:
         keep_line_on_stdout = False
 
-  words_to_color=[]
+  words_to_color = []
   if grep_words_with_color is not None:
     words_to_color += grep_words_with_color
   if highlight_words_with_color is not None:
     words_to_color += highlight_words_with_color
 
-  iwords_to_color=[]
+  iwords_to_color = []
   if igrep_words_with_color is not None:
     iwords_to_color += igrep_words_with_color
   if ihighlight_words_with_color is not None:

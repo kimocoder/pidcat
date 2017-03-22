@@ -352,6 +352,8 @@ PID_KILL  = re.compile(r'^Killing (\d+):([a-zA-Z0-9._:]+)/[^:]+: (.*)$')
 PID_LEAVE = re.compile(r'^No longer want ([a-zA-Z0-9._:]+) \(pid (\d+)\): .*$')
 PID_DEATH = re.compile(r'^Process ([a-zA-Z0-9._:]+) \(pid (\d+)\) has died.?$')
 LOG_LINE  = re.compile(r'^[0-9-]+ ([0-9:.]+) ([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
+LOG_LINE_NO_TIME = re.compile(r'([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
+LOG_LINE_DEFAULT_FMT = re.compile(r'^[0-9-]+ ([0-9:.]+)\s*([0-9]+)\s*[0-9]+ ([A-Z]) (.+?): (.*?)$')
 BUG_LINE  = re.compile(r'.*nativeGetEnabledTags.*')
 BACKTRACE_LINE = re.compile(r'^#(.*?)pc\s(.*?)$')
 
@@ -470,10 +472,6 @@ while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.t
   bug_line = BUG_LINE.match(line)
   if bug_line is not None:
     continue
-
-  # LOG_LINE = re.compile(r'^[0-9-]+ ([0-9:.]+) ([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
-  LOG_LINE_NO_TIME = re.compile(r'([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
-  LOG_LINE_DEFAULT_FMT = re.compile(r'^[0-9-]+ ([0-9:.]+)\s*([0-9]+)\s*[0-9]+ ([A-Z]) (.+?): (.*?)$')
 
   log_line = LOG_LINE.match(line)
   if log_line:

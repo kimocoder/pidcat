@@ -1,6 +1,7 @@
 #!/usr/bin/python -u
 
 import argparse
+import re
 import sys
 
 parser = argparse.ArgumentParser(description='Filter logcat by package name')
@@ -11,6 +12,8 @@ parser.add_argument('--grepv', dest='grepv_words', type=str, default='', help='E
 parser.add_argument('--igrep', dest='igrep_words', type=str, default='', help='The same as --grep, just ignore case')
 parser.add_argument('--ihl', dest='ihighlight_words', type=str, default='', help='The same as --hl, just ignore case')
 parser.add_argument('--igrepv', dest='igrepv_words', type=str, default='', help='The same as --grepv, just ignore case')
+parser.add_argument('--wrap-indent', dest='wrap_indent_width', type=int, default=0, help='If this option is provided, each wrapped line will be added an extra indent. This option implicitly enables `--wrap` option, however, please NOTE that when running in pipe mode, you have to use --wrap option explicitly to specify the terminal width by just adding \'--wrap=`tput cols`\'. For example, \'cat file.txt | hl.py --grep="test" --wrap=`tput cols`\'')
+parser.add_argument('--wrap', dest='terminal_width', type=int, default=-1, help='When running in pipe mode (like \'cat file.txt | hl.py --grep="test" --wrap=`tput cols`\'), if you want to wrap each line width specified width, you need to give terminal width as the value, just put \"`tput cols`\" here. When this option is provided, every line will be wrapped based on the \'terminal_width\' specified, where each line will be limited to the area with this width')
 
 args = parser.parse_args()
 
@@ -20,6 +23,18 @@ BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
 color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW, 'BLUE': BLUE, 'MAGENTA': MAGENTA, 'CYAN': CYAN, 'WHITE': WHITE}
 contrast_color_dict = {BLACK: WHITE, RED: BLACK, GREEN: BLACK, YELLOW: BLACK, BLUE: WHITE, MAGENTA: BLACK, CYAN: BLACK, WHITE: BLACK}
+
+width = args.terminal_width
+if width == -1:
+    try:
+        # Get the current terminal width
+        import fcntl
+        import termios
+        import struct
+        h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
+    except:
+        width = 100
+        print('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. Please just provide \'--pipe=`tput cols`\' as an option')
 
 
 def extract_color_from_word(word):
@@ -153,7 +168,55 @@ def highlight(line, words_to_color, ignore_case=False, prev_line=None, next_line
 
     return line
 
-print(file_path[0])
+
+ANSI_ESC_PATTERN = r'\x1b\[([0-9,A-Z]{1,2}(;[0-9]{1,2})*(;[0-9]{3})?)?[m|K]'
+
+
+# All ANSI escape codes are not counted in this `substr` function but are kept in the substring
+def substr(unstripped_str, start, end):
+    res = ''
+    unstripped_i = 0
+    idx = 0
+    cur_esc = ''
+    while unstripped_i < len(unstripped_str):
+        match_res = re.match(ANSI_ESC_PATTERN, unstripped_str[unstripped_i:])
+        if match_res:
+            cur_esc = unstripped_str[match_res.start() + unstripped_i:match_res.end() + unstripped_i]
+            if start <= idx <= end:
+                res += cur_esc
+            unstripped_i += match_res.end()
+        else:
+            if start <= idx < end:
+                if len(cur_esc) > 0 and idx == start and len(res) == 0:
+                    res += cur_esc
+                res += unstripped_str[unstripped_i]
+            unstripped_i += 1
+            idx += 1
+
+    if len(res) > 0 and res[-len(RESET):] != RESET and res[-len(EOL):] != EOL:
+        res += RESET
+    return res
+
+
+def split_to_lines(message, total_width, initial_indent_width, subsequent_indent_width):
+    if total_width == -1:
+        return message
+    message = message.replace('\t', '    ')
+    lines = []
+    current = 0
+    while current < len(message):
+        if current == 0:
+            wrap_area = total_width - initial_indent_width
+        else:
+            wrap_area = total_width - subsequent_indent_width
+        next = min(current + wrap_area, len(message))
+        lines.append(substr(message, current, next))
+        current = next
+    if len(lines) > 0 and len(lines[len(lines) - 1]) == 0:
+        del lines[-1]
+    return lines
+
+
 f = None
 if empty(file_path) or empty(file_path[0]):
     input_src = sys.stdin
@@ -204,7 +267,14 @@ while True:
     line = highlight(line, words_to_color, ignore_case=False)
     line = highlight(line, iwords_to_color, ignore_case=True)
 
-    print(line.encode('utf-8'))
+    if args.terminal_width != -1 or args.wrap_indent_width != 0:
+        indent = args.wrap_indent_width
+        lines = split_to_lines(line, width, 0, indent)
+        linebuf = ('\n' + ' ' * indent).join(lines)
+    else:
+        linebuf = line
+
+    print(linebuf.encode('utf-8'))
 
 if f is not None:
     f.close()

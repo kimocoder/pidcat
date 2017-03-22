@@ -153,7 +153,8 @@ if width == -1:
     import fcntl, termios, struct
     h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
   except:
-    pass
+    width = 100
+    print('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. Please just provide \'--pipe=`tput cols`\' as an option')
 
 RESET = '\033[0m'
 EOL = '\033[K'
@@ -267,11 +268,11 @@ def substr(unstripped_str, start, end):
     match_res = re.match(ANSI_ESC_PATTERN, unstripped_str[unstripped_i:])
     if match_res:
       cur_esc = unstripped_str[match_res.start() + unstripped_i:match_res.end() + unstripped_i]
-      if idx >= start and idx <= end:
+      if start <= idx <= end:
         res += cur_esc
       unstripped_i += match_res.end()
     else:
-      if idx >= start and idx < end:
+      if start <= idx < end:
         if len(cur_esc) > 0 and idx == start and len(res) == 0:
           res += cur_esc
         res += unstripped_str[unstripped_i]
@@ -622,15 +623,7 @@ while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.t
 
   lines = split_to_lines(message, width, header_size, header_size + args.extra_header_width)
 
-  if len(lines) > 0:
-    n = 0
-    prev_line = ''
-    for line in lines:
-      if n > 0:
-        linebuf += '\n'
-        linebuf += ' ' * (header_size + args.extra_header_width)
-      linebuf += line
-      n += 1
+  linebuf += ('\n' + ' ' * (header_size + args.extra_header_width)).join(lines)
 
   output_line(linebuf.encode('utf-8'), keep_line_on_stdout)
 

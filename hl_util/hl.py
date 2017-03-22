@@ -228,6 +228,7 @@ def run(input_src, file_path):
             return -1
         except UnicodeDecodeError:
             print_error('Can\'t decode line as utf-8 for file \'' + file_path + '\'')
+            continue
 
         matches_grep = does_match_grep(line, grep_words_with_color, False)
         matches_igrep = does_match_grep(line, igrep_words_with_color, True)

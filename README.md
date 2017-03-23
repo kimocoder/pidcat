@@ -1,10 +1,11 @@
 PID Cat (extended)
 ==================
 
-An update to Jake Wharton's excellent [pidcat][1] which filters `adb` result by application package name.
-
+An update to Jake Wharton's excellent [pidcat][1] which filters `adb`
+result by application package name.
+```bash
     pidcat com.oprah.bees.android
-
+```
 On top of this, this fork will mainly provide these additional features
  * `--timestamp`: add timestamp at the front of each line
  * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat`. This script will grep lines before `pidcat` cuts the original `adb` output line so as to not miss any lines in grepping. Moreover, you can specify different colors for each word in these options, which is very helpful in checking different word terms in massive log in sophisticated debugging. Corresponding case-ignored options are also provided: `--igrep`, `--ihl`, `--igrev`
@@ -16,16 +17,16 @@ On top of this, this fork will mainly provide these additional features
                         com.testapp``. [`h`][2] is a keyword highlighting utility. The option needs the current terminal width provided as the parameter, which is easy to get in shell using command `` `tput cols` ``.
 
 Here is an example of the output of the following command:
-
+```bash
     pidcat --timestamp --ihl="oslog\|logs\|sensor\\cyan\|queuebatch\\bg_blue\|state\\white\|latency\\bg_green\|enable\\magenta" --hl="screen\\yellow\|far\\bg_yellow\|event\\bg_ack"
-
+```
 ![Example screen](screen.png)
 
 Another example using pipe mode with 3rd-party [`h`][2] tool:
-
-    adb logcat | h health level logs intent upload android | pidcat --pipe=`tput cols`
-
-![Example screen](screen.png)
+```bash
+    adb logcat | h group android call Status Layout system pid event | pidcat --pipe=`tput cols`
+```
+![Example screen](screen2.png)
 
 You could notice that
  * The words are highlighted in specified colors, even the cut words due to line wrapping (`--hl`);
@@ -116,10 +117,10 @@ not work unless this is that case. That means, when you type `adb` and press
 enter into your terminal something actually happens.
 
 To include `adb` and other android tools on your path:
-
+```bash
     export PATH=$PATH:<path to Android SDK>/platform-tools
     export PATH=$PATH:<path to Android SDK>/tools
-
+```
 Include these lines in your `.bashrc`, `.zshrc` or `.bash_profile`.
 
 *Note:* `<path to Android SDK>` should be absolute and not relative.

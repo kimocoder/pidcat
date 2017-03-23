@@ -34,7 +34,7 @@ On top of this, this fork will mainly provide these additional features
 
 Here is an example of the output of the following command:
 ```bash
-    pidcat --timestamp --ihl="oslog\|logs\|sensor\\cyan\|queuebatch\\bg_blue\|state\\white\|latency\\bg_green\|enable\\magenta" --hl="screen\\yellow\|far\\bg_yellow\|event\\bg_ack"
+    pidcat --timestamp --ihl="oslog|logs|sensor\cyan|queuebatch\bg_blue|state\white|latency\bg_green|enable\magenta" --hl="screen\yellow|far\bg_yellow|event\bg_ack"
 ```
 ![Example screen](screen.png)
 
@@ -58,20 +58,21 @@ Here are details of all additional options provided:
                         further indent your wrapped lines with additional
                         width
   --grep GREP_WORDS     Filter lines with words in log messages. The words are
-                        delimited with '\|', where each word can be tailed
-                        with a color initialed with '\\'. If no color is
-                        specified, 'RED' will be the default color. For
-                        example, option --grep="word1\|word2\\CYAN" means to
-                        filter out all lines containing either word1 or word2,
-                        and word1 will appear in default color RED while word2
-                        will be in CYAN. Supported colors (case ignored):
-                        {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN,
-                        WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE,
-                        BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix
-                        'BG_' is background color. You can have multiple '--
-                        grep' options in the command line, and if so, the
-                        command will grep all of the key words in all '--grep'
-                        options
+                        delimited with '|', where each word can be tailed with
+                        a color initialed with '\'. If no color is specified,
+                        'RED' will be the default color. For example, option
+                        --grep="word1|word2\CYAN" means to filter out all
+                        lines containing either word1 or word2, and word1 will
+                        appear in default color 'RED', while word2 will be in
+                        the specified color 'CYAN'. Supported colors (case
+                        ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA,
+                        CYAN, WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW,
+                        BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE}. The color
+                        with prefix 'BG_' is background color. You can have
+                        multiple '--grep' options in the command line, and if
+                        so, the command will grep all of the key words in all
+                        '--grep' options. Escape '|' with '\|', and '\' with
+                        '\\'.
   --hl HIGHLIGHT_WORDS  Words to highlight in log messages. Unlike '--grep'
                         option, this option will only highlight the specified
                         words with specified color but does not filter any

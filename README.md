@@ -8,7 +8,23 @@ result by application package name.
 ```
 On top of this, this fork will mainly provide these additional features
  * `--timestamp`: add timestamp at the front of each line
- * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines. These options particularly consider the line cutting issue in `pidcat`. This script will grep lines before `pidcat` cuts the original `adb` output line so as to not miss any lines in grepping. Moreover, you can specify different colors for each word in these options, which is very helpful in checking different word terms in massive log in sophisticated debugging. Corresponding case-ignored options are also provided: `--igrep`, `--ihl`, `--igrev`
+ * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines.
+                        These options particularly consider the
+                        line cutting issue in `pidcat`.
+                        This script will grep lines before `pidcat`
+                        cuts the original `adb` output line so as to
+                        not miss any lines in grepping. Moreover, you can
+                        specify different colors for each word in these
+                        options, which is very helpful in checking different
+                        word terms in massive log in sophisticated debugging.
+                        The supported color names (case ignored) are
+                        `BLACK, RED, GREEN,
+                        YELLOW, BLUE, MAGENTA, CYAN,
+                        WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE,
+                        BG_MAGENTA, BG_CYAN, BG_WHITE`.
+                        The color names with prefix "BG_" are background colors.
+                        Corresponding case-ignored options are also
+                        provided: `--igrep`, `--ihl`, `--igrev`
  * `--header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
  * `--tee`, `--tee-original`: it supports to output the filtered and un-filtered `pidcat` result to specified files, which is useful for checking later
  * `--pipe`: it supports the script running in a pipe mode. For example, ``adb -d logcat | pidcat --pipe `tput cols`

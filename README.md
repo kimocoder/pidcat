@@ -22,7 +22,7 @@ On top of this, this fork will mainly provide these additional features
                         YELLOW, BLUE, MAGENTA, CYAN,
                         WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE,
                         BG_MAGENTA, BG_CYAN, BG_WHITE`.
-                        The color names with prefix "BG_" are background colors.
+                        The color names with prefix 'BG_' are background colors.
                         Corresponding case-ignored options are also
                         provided: `--igrep`, `--ihl`, `--igrev`
  * `--header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
@@ -34,7 +34,7 @@ On top of this, this fork will mainly provide these additional features
 
 Here is an example of the output of the following command:
 ```bash
-    pidcat --timestamp --ihl="oslog|logs|sensor\cyan|queuebatch\bg_blue|state\white|latency\bg_green|enable\magenta" --hl="screen\yellow|far\bg_yellow|event\bg_ack"
+    pidcat --timestamp --ihl='oslog|logs|sensor\cyan|queuebatch\bg_blue|state\white|latency\bg_green|enable\magenta' --hl='screen\yellow|far\bg_yellow|event\bg_ack'
 ```
 ![Example screen](screen.png)
 
@@ -61,7 +61,7 @@ Here are details of all additional options provided:
                         delimited with '|', where each word can be tailed with
                         a color initialed with '\'. If no color is specified,
                         'RED' will be the default color. For example, option
-                        --grep="word1|word2\CYAN" means to filter out all
+                        --grep='word1|word2\CYAN' means to filter out all
                         lines containing either word1 or word2, and word1 will
                         appear in default color 'RED', while word2 will be in
                         the specified color 'CYAN'. Supported colors (case
@@ -108,10 +108,10 @@ Here are details of all additional options provided:
                         file
   --pipe TERMINAL_WIDTH_FOR_PIPE_MODE
                         Note: you need to give terminal width as the value,
-                        just put "`tput cols`" here. When running in pipe
-                        mode, the script will take input from "stdin" rather
-                        than launching adb itself. The usage becomes something
-                        like "adb -d logcat | pidcat --pipe `tput cols`
+                        just put `tput cols` here. When running in pipe mode,
+                        the script will take input from 'stdin' rather than
+                        launching adb itself. The usage becomes something like
+                        "adb -d logcat | pidcat --pipe `tput cols`
                         com.testapp". This is very useful when you want to
                         apply any third-party scripts on the adb output before
                         pidcat cutting each line, like using 3rd-party scripts

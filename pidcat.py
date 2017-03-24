@@ -34,31 +34,93 @@ LOG_LEVELS_MAP = dict([(LOG_LEVELS[i], i) for i in range(len(LOG_LEVELS))])
 parser = argparse.ArgumentParser(description='Filter logcat by package name')
 parser.add_argument('package', nargs='*', help='Application package name(s)')
 parser.add_argument('-w', '--tag-width', metavar='N', dest='tag_width', type=int, default=23, help='Width of log tag')
-parser.add_argument('-l', '--min-level', dest='min_level', type=str, choices=LOG_LEVELS+LOG_LEVELS.lower(), default='V', help='Minimum level to be displayed')
-parser.add_argument('--color-gc', dest='color_gc', action='store_true', help='Color garbage collection')
-parser.add_argument('--always-display-tags', dest='always_tags', action='store_true',help='Always display the tag name')
-parser.add_argument('--current', dest='current_app', action='store_true',help='Filter logcat by current running app')
+parser.add_argument('-l', '--min-level', dest='min_level', type=str,
+                    choices=LOG_LEVELS+LOG_LEVELS.lower(), default='V',
+                    help='Minimum level to be displayed')
+parser.add_argument('--color-gc', dest='color_gc', action='store_true',
+                    help='Color garbage collection')
+parser.add_argument('--always-display-tags', dest='always_tags', action='store_true',
+                    help='Always display the tag name')
+parser.add_argument('--current', dest='current_app', action='store_true',
+                    help='Filter logcat by current running app')
 parser.add_argument('-s', '--serial', dest='device_serial', help='Device serial number (adb -s option)')
-parser.add_argument('-d', '--device', dest='use_device', action='store_true', help='Use first device for log input (adb -d option)')
-parser.add_argument('-e', '--emulator', dest='use_emulator', action='store_true', help='Use first emulator for log input (adb -e option)')
-parser.add_argument('-c', '--clear', dest='clear_logcat', action='store_true', help='Clear the entire log before running')
+parser.add_argument('-d', '--device', dest='use_device', action='store_true',
+                    help='Use first device for log input (adb -d option)')
+parser.add_argument('-e', '--emulator', dest='use_emulator', action='store_true',
+                    help='Use first emulator for log input (adb -e option)')
+parser.add_argument('-c', '--clear', dest='clear_logcat', action='store_true',
+                    help='Clear the entire log before running')
 parser.add_argument('-t', '--tag', dest='tag', action='append', help='Filter output by specified tag(s)')
-parser.add_argument('-i', '--ignore-tag', dest='ignored_tag', action='append', help='Filter output by ignoring specified tag(s)')
-parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print the version number and exit')
+parser.add_argument('-i', '--ignore-tag', dest='ignored_tag', action='append',
+                    help='Filter output by ignoring specified tag(s)')
+parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__,
+                    help='Print the version number and exit')
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
-parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', default=False, help='Prepend each line of output with the current time.')
-parser.add_argument('--extra-header-width', metavar='N', dest='extra_header_width', type=int, default=0, help='Width of customized log header. If you have your own header besides Android log header, this option will further indent your wrapped lines with additional width')
-parser.add_argument('--grep', dest='grep_words', action='append', help='Filter lines with words in log messages. The words are delimited with \'|\', where each word can be tailed with a color initialed with \'\\\'. If no color is specified, \'RED\' will be the default color. For example, option --grep=\'word1|word2\\CYAN\' means to filter out all lines containing either \'word1\' or \'word2\', and \'word1\' will appear in default color \'RED\', while \'word2\' will be in the specified color \'CYAN\'. Supported colors (case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE}. The color with prefix \'BG_\' is background color. You can have multiple \'--grep\' options in the command line, and if so, the command will grep all of the key words in all \'--grep\' options.  Escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'.')
-parser.add_argument('--hl', dest='highlight_words', action='append', help='Words to highlight in log messages. Unlike \'--grep\' option, this option will only highlight the specified words with specified color but does not filter any lines. Except this, the format and supported colors are the same as \'--grep\'. You can have multiple \'--hl\' options in the command line, and if so, the command will highlight all of the key words in all \'--hl\' options')
-parser.add_argument('--grepv', dest='grepv_words', action='append', help='Exclude lines with words from log messages. The format and supported colors are the same as \'--grep\'. Note that if both \'--grepv\' and \'--grep\' are provided and they contain the same word, the line will always show, which means \'--grep\' overwrites \'--grepv\' for the same word they both contain. You can have multiple \'--grepv\' options in the command line, and if so, the command will exclude the lines containing any keywords in all \'--grepv\' options')
+parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', default=False,
+                    help='Prepend each line of output with the current time.')
+parser.add_argument('--extra-header-width', metavar='N', dest='extra_header_width', type=int, default=0,
+                    help='Width of customized log header. If you have your own header besides Android log header, '
+                         'this option will further indent your wrapped lines with additional width')
+parser.add_argument('--grep', dest='grep_words', action='append',
+                    help='Filter lines with words in log messages. The words are delimited with \'|\', '
+                         'where each word can be tailed with a color initialed with \'\\\'. If no color '
+                         'is specified, \'RED\' will be the default color. For example, option '
+                         '--grep=\'word1|word2\\CYAN\' means to filter out all lines containing either '
+                         '\'word1\' or \'word2\', and \'word1\' will appear in default color \'RED\', '
+                         'while \'word2\' will be in the specified color \'CYAN\'. Supported colors '
+                         '(case ignored): {BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, '
+                         'BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE, NONE}. '
+                         'The color with prefix \'BG_\' is background color. And color \'NONE\' '
+                         'means NOT highlighting with color. You can have multiple \'--grep\' '
+                         'options in the command line, and if so, the command will grep all of the key words '
+                         'in all \'--grep\' options.  Escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'.')
+parser.add_argument('--hl', dest='highlight_words', action='append',
+                    help='Words to highlight in log messages. Unlike \'--grep\' option, '
+                         'this option will only highlight the specified words with specified '
+                         'color but does not filter any lines. Except this, the format and supported '
+                         'colors are the same as \'--grep\'. You can have multiple \'--hl\' options in '
+                         'the command line, and if so, the command will highlight all of the key words '
+                         'in all \'--hl\' options')
+parser.add_argument('--grepv', dest='grepv_words', action='append',
+                    help='Exclude lines with words from log messages. The format and supported colors are '
+                         'the same as \'--grep\'. Note that if both \'--grepv\' and \'--grep\' are provided '
+                         'and they contain the same word, the line will always show, which means \'--grep\' '
+                         'overwrites \'--grepv\' for the same word they both contain. You can have multiple '
+                         '\'--grepv\' options in the command line, and if so, the command will exclude the '
+                         'lines containing any keywords in all \'--grepv\' options')
 parser.add_argument('--igrep', dest='igrep_words', action='append', help='The same as \'--grep\', just ignore case')
 parser.add_argument('--ihl', dest='ihighlight_words', action='append', help='The same as \'--hl\', just ignore case')
 parser.add_argument('--igrepv', dest='igrepv_words', action='append', help='The same as \'--grepv\', just ignore case')
-parser.add_argument('--keep-all-fatal', dest='keep_fatal', action='store_true', help='Do not filter any fatal logs from pidcat output. This is quite helpful to avoid ignoring information about exceptions, crash stacks and assertion failures')
-parser.add_argument('--tee', dest='file_name', type=str, default='', help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
-parser.add_argument('--tee-original', dest='original_file_name', type=str, default='', help='Besides stdout output, also output the unfiltered result (all pidcat-formatted lines) to the file')
-parser.add_argument('--tee-adb', dest='adb_output_file_name', type=str, default='', help='Output original adb result (raw adb output) to the file')
-parser.add_argument('--pipe', dest='terminal_width_for_pipe_mode', type=int, default=-1, help='Note: you need to give terminal width as the value, just put `tput cols` here. When running in pipe mode, the script will take input from \'stdin\' rather than launching adb itself. The usage becomes something like \"adb -d logcat | pidcat --pipe `tput cols` com.testapp\". This is very useful when you want to apply any third-party scripts on the adb output before pidcat cutting each line, like using 3rd-party scripts to grep or hilight with colors (such as using \'ack\' or \'h\' command) to keywords. For example, \"adb -d logcat | h -i \'battery\' | pidcat --pipe `tput cols` com.testapp\"')
+parser.add_argument('--keep-all-fatal', dest='keep_fatal', action='store_true',
+                    help='Do not filter any fatal logs from pidcat output. This is quite helpful to '
+                         'avoid ignoring information about exceptions, crash stacks and assertion failures')
+parser.add_argument('--tee', dest='file_name', type=str, default='',
+                    help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
+parser.add_argument('--tee-original', dest='original_file_name', type=str, default='',
+                    help='Besides stdout output, also output the unfiltered result '
+                         '(all pidcat-formatted lines) to the file')
+parser.add_argument('--tee-adb', dest='adb_output_file_name', type=str, default='',
+                    help='Output original adb result (raw adb output) to the file')
+parser.add_argument('--pipe', dest='terminal_width_for_pipe_mode', type=int, default=-1,
+                    help='Note: you need to give terminal width as the value, just put `tput cols` here. '
+                         'When running in pipe mode, the script will take input from \'stdin\' rather '
+                         'than launching adb itself. The usage becomes something like '
+                         '\"adb -d logcat | pidcat --pipe `tput cols` com.testapp\". This is very useful '
+                         'when you want to apply any third-party scripts on the adb output before pidcat '
+                         'cutting each line, like using 3rd-party scripts to grep or hilight with colors '
+                         '(such as using \'ack\' or \'h\' command) to keywords. For example, '
+                         '\"adb -d logcat | h -i \'battery\' | pidcat --pipe `tput cols` com.testapp\"')
+parser.add_argument('--hide-header', dest='hide_header_regex', action='append',
+                    help='Remove the header in each line that matches the regular expression. '
+                         'Note that Android adb header is NOT considered here. '
+                         'The parameter is regular expression. When this option provided, the script will match the '
+                         'head of each log line (not including the Android adb header) '
+                         'with the regular expression, and remove the matched header in the '
+                         'output. This is useful when your own log has big long headers in each line which you don\'t '
+                         'care and want to hide them from the output. The regular expression syntax is in python '
+                         'style as described in \'https://docs.python.org/2/library/re.html\'. You can specify '
+                         'multiple \'--hide-header\' options and if the header matches any of them, it will be '
+                         'removed from output')
 
 
 args = parser.parse_args()
@@ -66,8 +128,11 @@ min_level = LOG_LEVELS_MAP[args.min_level.upper()]
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
 
-color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW, 'BLUE': BLUE, 'MAGENTA': MAGENTA, 'CYAN': CYAN, 'WHITE': WHITE}
-contrast_color_dict = {BLACK: WHITE, RED: WHITE, GREEN: BLACK, YELLOW: BLACK, BLUE: WHITE, MAGENTA: WHITE, CYAN: BLACK, WHITE: BLACK}
+color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW,
+              'BLUE': BLUE, 'MAGENTA': MAGENTA, 'CYAN': CYAN, 'WHITE': WHITE,
+              'NONE': None}
+contrast_color_dict = {BLACK: WHITE, RED: WHITE, GREEN: BLACK, YELLOW: BLACK,
+                       BLUE: WHITE, MAGENTA: WHITE, CYAN: BLACK, WHITE: BLACK}
 
 def empty(vector):
   return vector is None or len(vector) <= 0
@@ -163,7 +228,8 @@ if width == -1:
     h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
   except:
     width = 100
-    print('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. Please just provide \'--pipe=`tput cols`\' as an option')
+    print('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. '
+          'Please just provide \'--pipe=`tput cols`\' as an option')
 
 RESET = '\033[0m'
 EOL = '\033[K'
@@ -191,19 +257,27 @@ tee_adb_file = None
 if not empty(args.adb_output_file_name):
   tee_adb_file = open(args.adb_output_file_name, 'w')
 
-def output_line(line, keep_line_on_stdout = True):
-  if keep_line_on_stdout:
-    print(line)
-    if tee_file is not None:
-      tee_file.write(line)
-      tee_file.write('\n')
-      tee_file.flush()
+def hide_header(line, regex_list):
+  for regex in regex_list:
+    matches = re.match(regex, line)
+    if matches:
+      return line[matches.end():], True
+  return line, False
 
+def output_line(line, keep_line_on_stdout = True):
   if tee_original_file is not None:
     tee_original_file.write(line)
     tee_original_file.write('\n')
     tee_original_file.flush()
 
+  if keep_line_on_stdout:
+    if not empty(args.hide_header_regex):
+      line, header_hidden = hide_header(line, args.hide_header_regex)
+    print(line)
+    if tee_file is not None:
+      tee_file.write(line)
+      tee_file.write('\n')
+      tee_file.flush()
 
 def does_match_grep(message, grep_words_with_color, ignore_case):
   if not empty(grep_words_with_color):

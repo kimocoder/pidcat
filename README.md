@@ -68,11 +68,12 @@ Here are details of all additional options provided:
                         Supported colors (case ignored): {BLACK, RED, GREEN,
                         YELLOW, BLUE, MAGENTA, CYAN, WHITE, BG_BLACK, BG_RED,
                         BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN,
-                        BG_WHITE}. The color with prefix 'BG_' is background
-                        color. You can have multiple '--grep' options in the
-                        command line, and if so, the command will grep all of
-                        the key words in all '--grep' options. Escape '|' with
-                        '\|', and '\' with '\\'.
+                        BG_WHITE, NONE}. The color with prefix 'BG_' is
+                        background color. And color 'NONE' means NOT
+                        highlighting with color. You can have multiple '--
+                        grep' options in the command line, and if so, the
+                        command will grep all of the key words in all '--grep'
+                        options. Escape '|' with '\|', and '\' with '\\'.
   --hl HIGHLIGHT_WORDS  Words to highlight in log messages. Unlike '--grep'
                         option, this option will only highlight the specified
                         words with specified color but does not filter any
@@ -119,6 +120,22 @@ Here are details of all additional options provided:
                         'h' command) to keywords. For example, "adb -d logcat
                         | h -i 'battery' | pidcat --pipe `tput cols`
                         com.testapp"
+  --hide-header HIDE_HEADER_REGEX
+                        Remove the header in each line that matches the
+                        regular expression. Note that Android adb header is
+                        NOT considered here. The parameter is regular
+                        expression. When this option provided, the script will
+                        match the head of each log line (not including the
+                        Android adb header) with the regular expression, and
+                        remove the matched header in the output. This is
+                        useful when your own log has big long headers in each
+                        line which you don't care and want to hide them from
+                        the output. The regular expression syntax is in python
+                        style as described in
+                        'https://docs.python.org/2/library/re.html'. You can
+                        specify multiple '--hide-header' options and if the
+                        header matches any of them, it will be removed from
+                        output
 </pre>
 
 Install

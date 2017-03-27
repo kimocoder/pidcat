@@ -91,8 +91,8 @@ parser.add_argument('--grepv', dest='grepv_words', action='append',
 parser.add_argument('--igrep', dest='igrep_words', action='append', help='The same as \'--grep\', just ignore case')
 parser.add_argument('--ihl', dest='ihighlight_words', action='append', help='The same as \'--hl\', just ignore case')
 parser.add_argument('--igrepv', dest='igrepv_words', action='append', help='The same as \'--grepv\', just ignore case')
-parser.add_argument('--keep-all-fatal', dest='keep_fatal', action='store_true',
-                    help='Do not filter any fatal logs from pidcat output. This is quite helpful to '
+parser.add_argument('--keep-all-errors', dest='keep_errors', action='store_true',
+                    help='Do not filter any error or fatal logs from \'pidcat\' output. This is quite helpful to '
                          'avoid ignoring information about exceptions, crash stacks and assertion failures')
 parser.add_argument('--tee', dest='file_name', type=str, default='',
                     help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
@@ -682,7 +682,7 @@ try:
       linebuf += ' ' + level + ' '
     linebuf += ' '
 
-    if args.keep_fatal and level == 'F':
+    if args.keep_errors and (level == 'F' or level == 'E'):
       keep_line_on_stdout = True
     else:
       keep_line_on_stdout = False

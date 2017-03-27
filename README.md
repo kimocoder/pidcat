@@ -96,9 +96,10 @@ Here are details of all additional options provided:
                         The same as '--hl', just ignore case
   --igrepv IGREPV_WORDS
                         The same as '--grepv', just ignore case
-  --keep-all-fatal      Do not filter any fatal logs from pidcat output. This
-                        is quite helpful to avoid ignoring information about
-                        exceptions, crash stacks and assertion failures
+  --keep-all-errors     Do not filter any error or fatal logs from 'pidcat'
+                        output. This is quite helpful to avoid ignoring
+                        information about exceptions, crash stacks and
+                        assertion failures
   --tee FILE_NAME       Besides stdout output, also output the filtered result
                         (after grep/grepv) to the file
   --tee-original ORIGINAL_FILE_NAME

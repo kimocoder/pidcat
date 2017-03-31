@@ -342,7 +342,7 @@ def colorize_substr(str, start_index, end_index, color, bg):
   else:
     fg_color = color
     ul = True
-  colored_word = colorize(str[start_index:end_index], fg_color, bg_color, ul=ul)
+  colored_word = colorize(str[start_index:end_index], fg_color, bg_color, bold=True, ul=ul)
   return str[:start_index] + colored_word + str[end_index:], start_index + len(colored_word)
 
 def highlight(line, words_to_color, ignore_case=False, prev_line=None, next_line=None):
@@ -602,6 +602,11 @@ while True:
       seen_pids = True
       pids.add(pid)
 
+def add_timestap_header(time, line):
+  if args.add_timestamp:
+    line = time + " | " + line
+  return line
+
 if args.terminal_width_for_pipe_mode is not -1:
   input_src = sys.stdin
 else:
@@ -747,7 +752,10 @@ try:
               addr2line_res = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
               lines = addr2line_res.split('\n')
               for line in lines:
-                addr2line_lines.append(linebuf + colorize(line, fg=BLACK, bg=GREEN, bold=True))
+                line = colorize(line, fg=BLACK, bg=GREEN, bold=True)
+                line = add_timestap_header(time, line)
+                line = linebuf + line
+                addr2line_lines.append(line)
               break
 
     words_to_color = []
@@ -765,8 +773,8 @@ try:
     message = highlight(message, words_to_color, ignore_case=False)
     message = highlight(message, iwords_to_color, ignore_case=True)
 
-    if args.add_timestamp:
-      message = time + " | " + message
+
+    message = add_timestap_header(time, message)
 
     lines = split_to_lines(message, width, header_size, header_size + args.extra_header_width)
 

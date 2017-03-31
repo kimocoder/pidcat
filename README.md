@@ -57,7 +57,8 @@ Here are details of all additional options provided:
                         header besides Android log header, this option will
                         further indent your wrapped lines with additional
                         width
-  --grep GREP_WORDS     Filter lines with words in log messages. The words are
+  --grep WORD_LIST_TO_GREP
+                        Filter lines with words in log messages. The words are
                         delimited with '|', where each word can be tailed with
                         a color initialed with '\'. If no color is specified,
                         'RED' will be the default color. For example, option
@@ -74,7 +75,8 @@ Here are details of all additional options provided:
                         grep' options in the command line, and if so, the
                         command will grep all of the key words in all '--grep'
                         options. Escape '|' with '\|', and '\' with '\\'.
-  --hl HIGHLIGHT_WORDS  Words to highlight in log messages. Unlike '--grep'
+  --hl WORD_LIST_TO_HIGHLIGHT
+                        Words to highlight in log messages. Unlike '--grep'
                         option, this option will only highlight the specified
                         words with specified color but does not filter any
                         lines. Except this, the format and supported colors
@@ -82,7 +84,8 @@ Here are details of all additional options provided:
                         options in the command line, and if so, the command
                         will highlight all of the key words in all '--hl'
                         options
-  --grepv GREPV_WORDS   Exclude lines with words from log messages. The format
+  --grepv WORD_LIST_TO_EXCLUDE
+                        Exclude lines with words from log messages. The format
                         and supported colors are the same as '--grep'. Note
                         that if both '--grepv' and '--grep' are provided and
                         they contain the same word, the line will always show,
@@ -91,10 +94,11 @@ Here are details of all additional options provided:
                         grepv' options in the command line, and if so, the
                         command will exclude the lines containing any keywords
                         in all '--grepv' options
-  --igrep IGREP_WORDS   The same as '--grep', just ignore case
-  --ihl IHIGHLIGHT_WORDS
+  --igrep WORD_LIST_TO_GREP
+                        The same as '--grep', just ignore case
+  --ihl WORD_LIST_TO_HIGHLIGHT
                         The same as '--hl', just ignore case
-  --igrepv IGREPV_WORDS
+  --igrepv WORD_LIST_TO_EXCLUDE
                         The same as '--grepv', just ignore case
   --keep-all-errors     Do not filter any error or fatal logs from 'pidcat'
                         output. This is quite helpful to avoid ignoring
@@ -102,9 +106,10 @@ Here are details of all additional options provided:
                         assertion failures
   --tee FILE_NAME       Besides stdout output, also output the filtered result
                         (after grep/grepv) to the file
-  --tee-original ORIGINAL_FILE_NAME
+  --tee-pidcat PIDCAT_FILE_NAME
                         Besides stdout output, also output the unfiltered
-                        result (all pidcat-formatted lines) to the file
+                        original pidcat result (all pidcat-formatted lines) to
+                        the file
   --tee-adb ADB_OUTPUT_FILE_NAME
                         Output original adb result (raw adb output) to the
                         file
@@ -137,6 +142,20 @@ Here are details of all additional options provided:
                         specify multiple '--hide-header' options and if the
                         header matches any of them, it will be removed from
                         output
+  --addr2line ADDR2LINE_TOOL_PATH NATIVE_DEBUG_SO_LIB_FILE_PATH
+                        Note that this option needs 2 parameters. This option
+                        will help you automatically symbolicate the native
+                        crash addresses found in the log that match your '.so'
+                        lib file. 'ADDR2LINE_TOOL_PATH' is the path to the
+                        'xxx-addr2line', which should be found in your Android
+                        SDK directory. 'NATIVE_DEBUG_SO_LIB_FILE_PATH' is the
+                        file path to your debug version '.so' dynamic library
+                        with debug symbols in it. You can provide multiple '--
+                        addr2line' options to symbolicate crashes of multiple
+                        native libraries. Note that your
+                        'NATIVE_DEBUG_SO_LIB_FILE_PATH' version has to match
+                        the addresses in the crash log, otherwise, the
+                        symbolicated result would not be correct
 </pre>
 
 Install

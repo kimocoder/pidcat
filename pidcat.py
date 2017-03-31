@@ -61,7 +61,7 @@ parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', de
 parser.add_argument('--extra-header-width', metavar='N', dest='extra_header_width', type=int, default=0,
                     help='Width of customized log header. If you have your own header besides Android log header, '
                          'this option will further indent your wrapped lines with additional width')
-parser.add_argument('--grep', dest='grep_words', action='append',
+parser.add_argument('--grep', dest='grep_words', metavar='WORD_LIST_TO_GREP', action='append',
                     help='Filter lines with words in log messages. The words are delimited with \'|\', '
                          'where each word can be tailed with a color initialed with \'\\\'. If no color '
                          'is specified, \'RED\' will be the default color. For example, option '
@@ -74,30 +74,30 @@ parser.add_argument('--grep', dest='grep_words', action='append',
                          'means NOT highlighting with color. You can have multiple \'--grep\' '
                          'options in the command line, and if so, the command will grep all of the key words '
                          'in all \'--grep\' options.  Escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'.')
-parser.add_argument('--hl', dest='highlight_words', action='append',
+parser.add_argument('--hl', dest='highlight_words', metavar='WORD_LIST_TO_HIGHLIGHT', action='append',
                     help='Words to highlight in log messages. Unlike \'--grep\' option, '
                          'this option will only highlight the specified words with specified '
                          'color but does not filter any lines. Except this, the format and supported '
                          'colors are the same as \'--grep\'. You can have multiple \'--hl\' options in '
                          'the command line, and if so, the command will highlight all of the key words '
                          'in all \'--hl\' options')
-parser.add_argument('--grepv', dest='grepv_words', action='append',
+parser.add_argument('--grepv', dest='grepv_words', metavar='WORD_LIST_TO_EXCLUDE', action='append',
                     help='Exclude lines with words from log messages. The format and supported colors are '
                          'the same as \'--grep\'. Note that if both \'--grepv\' and \'--grep\' are provided '
                          'and they contain the same word, the line will always show, which means \'--grep\' '
                          'overwrites \'--grepv\' for the same word they both contain. You can have multiple '
                          '\'--grepv\' options in the command line, and if so, the command will exclude the '
                          'lines containing any keywords in all \'--grepv\' options')
-parser.add_argument('--igrep', dest='igrep_words', action='append', help='The same as \'--grep\', just ignore case')
-parser.add_argument('--ihl', dest='ihighlight_words', action='append', help='The same as \'--hl\', just ignore case')
-parser.add_argument('--igrepv', dest='igrepv_words', action='append', help='The same as \'--grepv\', just ignore case')
+parser.add_argument('--igrep', dest='igrep_words', metavar='WORD_LIST_TO_GREP', action='append', help='The same as \'--grep\', just ignore case')
+parser.add_argument('--ihl', dest='ihighlight_words', metavar='WORD_LIST_TO_HIGHLIGHT', action='append', help='The same as \'--hl\', just ignore case')
+parser.add_argument('--igrepv', dest='igrepv_words', metavar='WORD_LIST_TO_EXCLUDE', action='append', help='The same as \'--grepv\', just ignore case')
 parser.add_argument('--keep-all-errors', dest='keep_errors', action='store_true',
                     help='Do not filter any error or fatal logs from \'pidcat\' output. This is quite helpful to '
                          'avoid ignoring information about exceptions, crash stacks and assertion failures')
 parser.add_argument('--tee', dest='file_name', type=str, default='',
                     help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
-parser.add_argument('--tee-original', dest='original_file_name', type=str, default='',
-                    help='Besides stdout output, also output the unfiltered result '
+parser.add_argument('--tee-pidcat', dest='pidcat_file_name', type=str, default='',
+                    help='Besides stdout output, also output the unfiltered original pidcat result '
                          '(all pidcat-formatted lines) to the file')
 parser.add_argument('--tee-adb', dest='adb_output_file_name', type=str, default='',
                     help='Output original adb result (raw adb output) to the file')
@@ -121,9 +121,37 @@ parser.add_argument('--hide-header', dest='hide_header_regex', action='append',
                          'style as described in \'https://docs.python.org/2/library/re.html\'. You can specify '
                          'multiple \'--hide-header\' options and if the header matches any of them, it will be '
                          'removed from output')
+parser.add_argument('--addr2line', nargs=2, type=str, dest='addr2line',
+                    metavar=('ADDR2LINE_TOOL_PATH', 'NATIVE_DEBUG_SO_LIB_FILE_PATH'), action='append',
+                    help='Note that this option needs 2 parameters. This option will help you automatically '
+                         'symbolicate the native crash addresses found in the log that match your '
+                         '\'.so\' lib file. \'ADDR2LINE_TOOL_PATH\' is the path to '
+                         'the \'xxx-addr2line\', which should be found in your Android SDK directory. '
+                         '\'NATIVE_DEBUG_SO_LIB_FILE_PATH\' is the file path to '
+                         'your debug version \'.so\' dynamic library with debug symbols in it. '
+                         'You can provide multiple \'--addr2line\' options to symbolicate '
+                         'crashes of multiple native libraries. Note that your \'NATIVE_DEBUG_SO_LIB_FILE_PATH\' '
+                         'version has to match the addresses in the crash log, otherwise, the symbolicated result '
+                         'would not be correct')
 
+
+PID_LINE = re.compile(r'^\w+\s+(\w+)\s+\w+\s+\w+\s+\w+\s+\w+\s+\w+\s+\w\s([\w|\.|\/]+)$')
+PID_START = re.compile(r'^.*: Start proc ([a-zA-Z0-9._:]+) for ([a-z]+ [^:]+): pid=(\d+) uid=(\d+) gids=(.*)$')
+PID_START_5_1 = re.compile(r'^.*: Start proc (\d+):([a-zA-Z0-9._:]+)/[a-z0-9]+ for (.*)$')
+PID_START_DALVIK = re.compile(r'^E/dalvikvm\(\s*(\d+)\): >>>>> ([a-zA-Z0-9._:]+) \[ userId:0 \| appId:(\d+) \]$')
+PID_KILL  = re.compile(r'^Killing (\d+):([a-zA-Z0-9._:]+)/[^:]+: (.*)$')
+PID_LEAVE = re.compile(r'^No longer want ([a-zA-Z0-9._:]+) \(pid (\d+)\): .*$')
+PID_DEATH = re.compile(r'^Process ([a-zA-Z0-9._:]+) \(pid (\d+)\) has died.?$')
+LOG_LINE  = re.compile(r'^[0-9-]+ ([0-9:.]+) ([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
+LOG_LINE_NO_TIME = re.compile(r'([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
+LOG_LINE_DEFAULT_FMT = re.compile(r'^[0-9-]+ ([0-9:.]+)\s*([0-9]+)\s*[0-9]+ ([A-Z]) (.+?): (.*?)$')
+BUG_LINE  = re.compile(r'.*nativeGetEnabledTags.*')
+BACKTRACE_LINE = re.compile(r'^#(.*?)pc\s(.*?)$')
+NATIVE_CRASH_LINE = re.compile(r'#[0-9]{2}[\s]+pc[\s]+([0-9a-zA-Z]+)[\s]+(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))')
+FILE_PATH = re.compile(r'^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))')
 
 args = parser.parse_args()
+
 min_level = LOG_LEVELS_MAP[args.min_level.upper()]
 
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
@@ -234,24 +262,32 @@ if width == -1:
 RESET = '\033[0m'
 EOL = '\033[K'
 
-def termcolor(fg=None, bg=None, ul=False):
+def termcolor(fg=None, bg=None, bold=False, ul=False):
   codes = []
   if fg is not None:
     codes.append('3%d' % fg)
   if bg is not None:
     codes.append('10%d' % bg)
-  return '\033[%s%sm' % ('4;' if ul else '', ';'.join(codes) if codes else '')
+  res = '\033['
+  if bold:
+    res += '1;'
+  if ul:
+    res += '4;'
+  if codes:
+    res += ';'.join(codes)
+  res += 'm'
+  return res
 
-def colorize(message, fg=None, bg=None, ul=False):
-  return termcolor(fg, bg, ul) + message + RESET
+def colorize(message, fg=None, bg=None, bold=False, ul=False):
+  return termcolor(fg, bg, bold, ul) + message + RESET
 
 tee_file = None
 if not empty(args.file_name):
   tee_file = open(args.file_name, 'w')
 
-tee_original_file = None
-if not empty(args.original_file_name):
-  tee_original_file = open(args.original_file_name, 'w')
+tee_pidcat_file = None
+if not empty(args.pidcat_file_name):
+  tee_pidcat_file = open(args.pidcat_file_name, 'w')
 
 tee_adb_file = None
 if not empty(args.adb_output_file_name):
@@ -265,10 +301,10 @@ def hide_header(line, regex_list):
   return line, False
 
 def output_line(line, keep_line_on_stdout = True):
-  if tee_original_file is not None:
-    tee_original_file.write(line)
-    tee_original_file.write('\n')
-    tee_original_file.flush()
+  if tee_pidcat_file is not None:
+    tee_pidcat_file.write(line)
+    tee_pidcat_file.write('\n')
+    tee_pidcat_file.flush()
 
   if keep_line_on_stdout:
     if not empty(args.hide_header_regex):
@@ -462,25 +498,12 @@ if args.color_gc:
 
 TAGTYPES = {
   'V': colorize(' V ', fg=WHITE, bg=BLACK),
-  'D': colorize(' D ', fg=BLACK, bg=BLUE),
+  'D': colorize(' D ', fg=WHITE, bg=BLUE),
   'I': colorize(' I ', fg=BLACK, bg=GREEN),
   'W': colorize(' W ', fg=BLACK, bg=YELLOW),
-  'E': colorize(' E ', fg=BLACK, bg=RED),
-  'F': colorize(' F ', fg=BLACK, bg=RED),
+  'E': colorize(' E ', fg=WHITE, bg=RED),
+  'F': colorize(' F ', fg=WHITE, bg=RED),
 }
-
-PID_LINE = re.compile(r'^\w+\s+(\w+)\s+\w+\s+\w+\s+\w+\s+\w+\s+\w+\s+\w\s([\w|\.|\/]+)$')
-PID_START = re.compile(r'^.*: Start proc ([a-zA-Z0-9._:]+) for ([a-z]+ [^:]+): pid=(\d+) uid=(\d+) gids=(.*)$')
-PID_START_5_1 = re.compile(r'^.*: Start proc (\d+):([a-zA-Z0-9._:]+)/[a-z0-9]+ for (.*)$')
-PID_START_DALVIK = re.compile(r'^E/dalvikvm\(\s*(\d+)\): >>>>> ([a-zA-Z0-9._:]+) \[ userId:0 \| appId:(\d+) \]$')
-PID_KILL  = re.compile(r'^Killing (\d+):([a-zA-Z0-9._:]+)/[^:]+: (.*)$')
-PID_LEAVE = re.compile(r'^No longer want ([a-zA-Z0-9._:]+) \(pid (\d+)\): .*$')
-PID_DEATH = re.compile(r'^Process ([a-zA-Z0-9._:]+) \(pid (\d+)\) has died.?$')
-LOG_LINE  = re.compile(r'^[0-9-]+ ([0-9:.]+) ([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
-LOG_LINE_NO_TIME = re.compile(r'([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
-LOG_LINE_DEFAULT_FMT = re.compile(r'^[0-9-]+ ([0-9:.]+)\s*([0-9]+)\s*[0-9]+ ([A-Z]) (.+?): (.*?)$')
-BUG_LINE  = re.compile(r'.*nativeGetEnabledTags.*')
-BACKTRACE_LINE = re.compile(r'^#(.*?)pc\s(.*?)$')
 
 adb_command = base_adb_command[:]
 adb_command.append('logcat')
@@ -684,6 +707,8 @@ try:
 
     if args.keep_errors and (level == 'F' or level == 'E'):
       keep_line_on_stdout = True
+    elif args.addr2line and NATIVE_CRASH_LINE.match(message):
+      keep_line_on_stdout = True
     else:
       keep_line_on_stdout = False
 
@@ -703,6 +728,28 @@ try:
         else:
           keep_line_on_stdout = False
 
+    # format tag message using rules
+    for matcher in RULES:
+      replace = RULES[matcher]
+      message = matcher.sub(replace, message)
+
+    addr2line_lines = []
+    if args.addr2line:
+      matches_native_crash = NATIVE_CRASH_LINE.match(message)
+      if matches_native_crash:
+        crash_addr, crash_dir, crash_file_name, crash_ext_name = matches_native_crash.groups()
+        for tool, lib_path in args.addr2line:
+          matches_lib_path = FILE_PATH.match(lib_path)
+          if matches_lib_path:
+            lib_dir, lib_file_name, lib_ext_name = matches_lib_path.groups()
+            if crash_file_name == lib_file_name and crash_ext_name == lib_ext_name:
+              command = tool + ' -C -f -e ' + lib_path + ' ' + crash_addr
+              addr2line_res = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
+              lines = addr2line_res.split('\n')
+              for line in lines:
+                addr2line_lines.append(linebuf + colorize(line, fg=BLACK, bg=GREEN, bold=True))
+              break
+
     words_to_color = []
     if grep_words_with_color is not None:
       words_to_color += grep_words_with_color
@@ -715,22 +762,22 @@ try:
     if ihighlight_words_with_color is not None:
       iwords_to_color += ihighlight_words_with_color
 
-    # format tag message using rules
-    for matcher in RULES:
-      replace = RULES[matcher]
-      message = matcher.sub(replace, message)
+    message = highlight(message, words_to_color, ignore_case=False)
+    message = highlight(message, iwords_to_color, ignore_case=True)
 
     if args.add_timestamp:
       message = time + " | " + message
-
-    message = highlight(message, words_to_color, ignore_case=False)
-    message = highlight(message, iwords_to_color, ignore_case=True)
 
     lines = split_to_lines(message, width, header_size, header_size + args.extra_header_width)
 
     linebuf += ('\n' + ' ' * (header_size + args.extra_header_width)).join(lines)
 
     output_line(linebuf.encode('utf-8'), keep_line_on_stdout)
+
+    if not empty(addr2line_lines):
+      for line in addr2line_lines:
+        if not empty(line):
+          output_line(line.encode('utf-8'), True)
 
 except KeyboardInterrupt:
   print(RESET + EOL + '\n')

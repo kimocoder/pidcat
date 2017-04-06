@@ -8,7 +8,8 @@ result by application package name.
 ```
 On top of this, this fork will mainly provide these additional features
  * `--timestamp`: add timestamp at the front of each line
- * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines.
+ * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines with
+                        specified color for each key word.
                         These options particularly consider the
                         line cutting issue in `pidcat`.
                         This script will grep lines before `pidcat`
@@ -25,7 +26,7 @@ On top of this, this fork will mainly provide these additional features
                         The color names with prefix 'BG_' are background colors.
                         Corresponding case-ignored options are also
                         provided: `--igrep`, `--ihl`, `--igrev`
- * `--header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
+ * `--extra-header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
  * `--tee`, `--tee-original`: it supports to output the filtered and un-filtered `pidcat` result to specified files, which is useful for checking later
  * `--pipe`: it supports the script running in a pipe mode. For example, ``adb -d logcat | pidcat --pipe `tput cols`
                         com.testapp``. This is very useful if you want to use 3rd party tool to filter adb output, such as grepping, highlighting. For example, ``adb -d logcat

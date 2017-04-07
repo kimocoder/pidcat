@@ -739,24 +739,27 @@ try:
       message = matcher.sub(replace, message)
 
     addr2line_lines = []
-    if args.addr2line:
-      matches_native_crash = NATIVE_CRASH_LINE.match(message)
-      if matches_native_crash:
-        crash_addr, crash_dir, crash_file_name, crash_ext_name = matches_native_crash.groups()
-        for tool, lib_path in args.addr2line:
-          matches_lib_path = FILE_PATH.match(lib_path)
-          if matches_lib_path:
-            lib_dir, lib_file_name, lib_ext_name = matches_lib_path.groups()
-            if crash_file_name == lib_file_name and crash_ext_name == lib_ext_name:
-              command = tool + ' -C -f -e ' + lib_path + ' ' + crash_addr
-              addr2line_res = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
-              lines = addr2line_res.split('\n')
-              for line in lines:
-                line = colorize(line, fg=BLACK, bg=GREEN, bold=True)
-                line = add_timestap_header(time, line)
-                line = linebuf + line
-                addr2line_lines.append(line)
-              break
+    if (level == 'F' or level == 'E') and args.addr2line:
+      for i in range(0, len(message)):
+        matches_native_crash = NATIVE_CRASH_LINE.match(message[i:])
+        if matches_native_crash:
+          crash_addr, crash_dir, crash_file_name, crash_ext_name = matches_native_crash.groups()
+          crash_ext_name = crash_ext_name.split()[0]
+          for tool, lib_path in args.addr2line:
+            matches_lib_path = FILE_PATH.match(lib_path)
+            if matches_lib_path:
+              lib_dir, lib_file_name, lib_ext_name = matches_lib_path.groups()
+              if crash_file_name == lib_file_name and crash_ext_name == lib_ext_name:
+                command = tool + ' -C -f -e ' + lib_path + ' ' + crash_addr
+                addr2line_res = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
+                lines = addr2line_res.split('\n')
+                for line in lines:
+                  line = colorize(line, fg=BLACK, bg=GREEN, bold=True)
+                  line = add_timestap_header(time, line)
+                  line = linebuf + line
+                  addr2line_lines.append(line)
+                break
+          break
 
     words_to_color = []
     if grep_words_with_color is not None:

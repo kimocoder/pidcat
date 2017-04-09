@@ -27,7 +27,7 @@ import re
 import subprocess
 from subprocess import PIPE
 
-__version__ = '2.1.0'
+__version__ = '2.2.0'
 
 LOG_LEVELS = 'VDIWEF'
 LOG_LEVELS_MAP = dict([(LOG_LEVELS[i], i) for i in range(len(LOG_LEVELS))])
@@ -92,24 +92,24 @@ parser.add_argument('--igrep', dest='igrep_words', metavar='WORD_LIST_TO_GREP', 
 parser.add_argument('--ihl', dest='ihighlight_words', metavar='WORD_LIST_TO_HIGHLIGHT', action='append', help='The same as \'--hl\', just ignore case')
 parser.add_argument('--igrepv', dest='igrepv_words', metavar='WORD_LIST_TO_EXCLUDE', action='append', help='The same as \'--grepv\', just ignore case')
 parser.add_argument('--keep-all-errors', dest='keep_errors', action='store_true',
-                    help='Do not filter any error or fatal logs from \'pidcat\' output. This is quite helpful to '
+                    help='Do not filter any error or fatal logs from \'pidcat-ex\' output. This is quite helpful to '
                          'avoid ignoring information about exceptions, crash stacks and assertion failures')
 parser.add_argument('--tee', dest='file_name', type=str, default='',
                     help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
 parser.add_argument('--tee-pidcat', dest='pidcat_file_name', type=str, default='',
-                    help='Besides stdout output, also output the unfiltered original pidcat result '
-                         '(all pidcat-formatted lines) to the file')
+                    help='Besides stdout output, also output the unfiltered original pidcat-ex result '
+                         '(all pidcat-ex formatted lines) to the file')
 parser.add_argument('--tee-adb', dest='adb_output_file_name', type=str, default='',
                     help='Output original adb result (raw adb output) to the file')
 parser.add_argument('--pipe', dest='terminal_width_for_pipe_mode', type=int, default=-1,
                     help='Note: you need to give terminal width as the value, just put `tput cols` here. '
                          'When running in pipe mode, the script will take input from \'stdin\' rather '
                          'than launching adb itself. The usage becomes something like '
-                         '\"adb -d logcat | pidcat --pipe `tput cols` com.testapp\". This is very useful '
-                         'when you want to apply any third-party scripts on the adb output before pidcat '
+                         '\"adb -d logcat | pidcat-ex --pipe `tput cols` com.testapp\". This is very useful '
+                         'when you want to apply any third-party scripts on the adb output before pidcat-ex '
                          'cutting each line, like using 3rd-party scripts to grep or hilight with colors '
                          '(such as using \'ack\' or \'h\' command) to keywords. For example, '
-                         '\"adb -d logcat | h -i \'battery\' | pidcat --pipe `tput cols` com.testapp\"')
+                         '\"adb -d logcat | h -i \'battery\' | pidcat-ex --pipe `tput cols` com.testapp\"')
 parser.add_argument('--hide-header', dest='hide_header_regex', action='append',
                     help='Remove the header in each line that matches the regular expression. '
                          'Note that Android adb header is NOT considered here. '

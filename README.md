@@ -3,10 +3,12 @@ PID Cat (extended)
 
 An update to Jake Wharton's excellent [pidcat][1] which filters `adb`
 result by application package name.
+
+Basic usage:
 ```bash
-    pidcat com.oprah.bees.android
+    pidcat-ex com.oprah.bees.android
 ```
-On top of this, this fork will mainly provide these additional features
+On top of original [pidcat][1], this fork will mainly provide these additional features
  * `--timestamp`: add timestamp at the front of each line
  * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines with
                         specified color for each key word.
@@ -28,20 +30,20 @@ On top of this, this fork will mainly provide these additional features
                         provided: `--igrep`, `--ihl`, `--igrev`
  * `--extra-header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
  * `--tee`, `--tee-original`: it supports to output the filtered and un-filtered `pidcat` result to specified files, which is useful for checking later
- * `--pipe`: it supports the script running in a pipe mode. For example, ``adb -d logcat | pidcat --pipe `tput cols`
+ * `--pipe`: it supports the script running in a pipe mode. For example, ``adb -d logcat | pidcat-ex --pipe `tput cols`
                         com.testapp``. This is very useful if you want to use 3rd party tool to filter adb output, such as grepping, highlighting. For example, ``adb -d logcat
-                        | h -i 'battery' | pidcat --pipe `tput cols`
+                        | h -i 'battery' | pidcat-ex --pipe `tput cols`
                         com.testapp``. [`h`][2] is a keyword highlighting utility. The option needs the current terminal width provided as the parameter, which is easy to get in shell using command `` `tput cols` ``.
 
 Here is an example of the output of the following command:
 ```bash
-    pidcat --timestamp --ihl='oslog|logs|sensor\cyan|queuebatch\bg_blue|state\white|latency\bg_green|enable\magenta' --hl='screen\yellow|far\bg_yellow|event\bg_ack'
+    pidcat-ex --timestamp --ihl='oslog|logs|sensor\cyan|queuebatch\bg_blue|state\white|latency\bg_green|enable\magenta' --hl='screen\yellow|far\bg_yellow|event\bg_ack'
 ```
 ![Example screen](screen.png)
 
 Another example using pipe mode with 3rd-party [`h`][2] tool:
 ```bash
-    adb logcat | h group android call Status Layout system pid event | pidcat --pipe=`tput cols`
+    adb logcat | h group android call Status Layout system pid event | pidcat-ex --pipe=`tput cols`
 ```
 ![Example screen](screen2.png)
 
@@ -164,7 +166,7 @@ Install
 
 Get the script:
 
- * Download the `pidcat.py` and place it on your PATH.
+ * Download the `pidcat-ex.py` and place it on your PATH.
 
 
 Make sure that `adb` from the [Android SDK][3] is on your PATH. This script will

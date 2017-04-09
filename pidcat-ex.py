@@ -24,6 +24,7 @@ limitations under the License.
 import argparse
 import sys
 import re
+import time
 import subprocess
 from subprocess import PIPE
 
@@ -187,8 +188,15 @@ def termcolor(fg=None, bg=None, bold=False, ul=False):
 def colorize(message, fg=None, bg=None, bold=False, ul=False):
   return termcolor(fg, bg, bold, ul) + message + RESET
 
+def pause(tm):
+    for i in range(0, tm - 1):
+        sys.stdout.write("Continue in %d seconds ...\r" % (tm - i))
+        time.sleep(1)
+    sys.stdout.write("\r\n")
+
 def print_error(error_msg):
   print('\n' + colorize(error_msg, fg=WHITE, bg=RED, ul=True) + '\n')
+  pause(5)
 
 def extract_color_from_word(word):
   word = word.replace('\|', '|')

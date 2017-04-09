@@ -28,12 +28,26 @@ On top of original [pidcat][1], this fork will mainly provide these additional f
                         The color names with prefix 'BG_' are background colors.
                         Corresponding case-ignored options are also
                         provided: `--igrep`, `--ihl`, `--igrev`
- * `--extra-header-width`: if customized header added in each log line besides Android headers, this option can help indent additional space for each wrapped lines
- * `--tee`, `--tee-original`: it supports to output the filtered and un-filtered `pidcat` result to specified files, which is useful for checking later
- * `--pipe`: it supports the script running in a pipe mode. For example, ``adb -d logcat | pidcat-ex --pipe `tput cols`
-                        com.testapp``. This is very useful if you want to use 3rd party tool to filter adb output, such as grepping, highlighting. For example, ``adb -d logcat
-                        | h -i 'battery' | pidcat-ex --pipe `tput cols`
-                        com.testapp``. [`h`][2] is a keyword highlighting utility. The option needs the current terminal width provided as the parameter, which is easy to get in shell using command `` `tput cols` ``.
+ * `--pipe`: it supports the script running in a pipe mode. For example,
+   ``adb -d logcat | pidcat-ex --pipe `tput cols` com.testapp``.
+   This is very useful if you want to use 3rd party tool to filter
+   adb output, such as grepping, highlighting. For example,
+   ``adb -d logcat | h -i 'battery' | pidcat-ex --pipe `tput cols` com.testapp``.
+   [`h`][2] is a keyword highlighting utility.
+   The option needs the current terminal width provided as the parameter,
+   which is easy to get in shell using command `` `tput cols` ``.
+ * `--extra-header-width`: if customized header added in each log line
+    besides Android headers, this option can help indent additional
+    space for each wrapped lines
+ * `--hide-header`: you can also hide your customized header that you don't care
+   to shorten each log line
+ * `--tee`, `--tee-pidcat`, `--tee-adb`: it supports to output
+   the filtered and un-filtered `pidcat` result as well as the original
+   `adb` result to specified files, which is useful for checking log later.
+ * `--addr2line`: if you care about native code (C/C++) crash, this option
+   can automatically symbolicate the addresses to lines in code, given
+   that paths of the debug version .so dynamic library file
+   and Android addr2line tool are provided
 
 Here is an example of the output of the following command:
 ```bash
@@ -103,7 +117,7 @@ Here are details of all additional options provided:
                         The same as '--hl', just ignore case
   --igrepv WORD_LIST_TO_EXCLUDE
                         The same as '--grepv', just ignore case
-  --keep-all-errors     Do not filter any error or fatal logs from 'pidcat'
+  --keep-all-errors     Do not filter any error or fatal logs from 'pidcat-ex'
                         output. This is quite helpful to avoid ignoring
                         information about exceptions, crash stacks and
                         assertion failures
@@ -111,8 +125,8 @@ Here are details of all additional options provided:
                         (after grep/grepv) to the file
   --tee-pidcat PIDCAT_FILE_NAME
                         Besides stdout output, also output the unfiltered
-                        original pidcat result (all pidcat-formatted lines) to
-                        the file
+                        original pidcat-ex result (all pidcat-ex formatted
+                        lines) to the file
   --tee-adb ADB_OUTPUT_FILE_NAME
                         Output original adb result (raw adb output) to the
                         file
@@ -121,14 +135,14 @@ Here are details of all additional options provided:
                         just put `tput cols` here. When running in pipe mode,
                         the script will take input from 'stdin' rather than
                         launching adb itself. The usage becomes something like
-                        "adb -d logcat | pidcat --pipe `tput cols`
+                        "adb -d logcat | pidcat-ex --pipe `tput cols`
                         com.testapp". This is very useful when you want to
                         apply any third-party scripts on the adb output before
-                        pidcat cutting each line, like using 3rd-party scripts
-                        to grep or hilight with colors (such as using 'ack' or
-                        'h' command) to keywords. For example, "adb -d logcat
-                        | h -i 'battery' | pidcat --pipe `tput cols`
-                        com.testapp"
+                        pidcat-ex cutting each line, like using 3rd-party
+                        scripts to grep or hilight with colors (such as using
+                        'ack' or 'h' command) to keywords. For example, "adb
+                        -d logcat | h -i 'battery' | pidcat-ex --pipe `tput
+                        cols` com.testapp"
   --hide-header HIDE_HEADER_REGEX
                         Remove the header in each line that matches the
                         regular expression. Note that Android adb header is

@@ -165,6 +165,31 @@ contrast_color_dict = {BLACK: WHITE, RED: WHITE, GREEN: BLACK, YELLOW: BLACK,
 def empty(vector):
   return vector is None or len(vector) <= 0
 
+RESET = '\033[0m'
+EOL = '\033[K'
+
+def termcolor(fg=None, bg=None, bold=False, ul=False):
+  codes = []
+  if fg is not None:
+    codes.append('3%d' % fg)
+  if bg is not None:
+    codes.append('10%d' % bg)
+  res = '\033['
+  if bold:
+    res += '1;'
+  if ul:
+    res += '4;'
+  if codes:
+    res += ';'.join(codes)
+  res += 'm'
+  return res
+
+def colorize(message, fg=None, bg=None, bold=False, ul=False):
+  return termcolor(fg, bg, bold, ul) + message + RESET
+
+def print_error(error_msg):
+  print('\n' + colorize(error_msg, fg=WHITE, bg=RED, ul=True) + '\n')
+
 def extract_color_from_word(word):
   word = word.replace('\|', '|')
   w = word
@@ -256,30 +281,8 @@ if width == -1:
     h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
   except:
     width = 100
-    print('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. '
-          'Please just provide \'--pipe=`tput cols`\' as an option')
-
-RESET = '\033[0m'
-EOL = '\033[K'
-
-def termcolor(fg=None, bg=None, bold=False, ul=False):
-  codes = []
-  if fg is not None:
-    codes.append('3%d' % fg)
-  if bg is not None:
-    codes.append('10%d' % bg)
-  res = '\033['
-  if bold:
-    res += '1;'
-  if ul:
-    res += '4;'
-  if codes:
-    res += ';'.join(codes)
-  res += 'm'
-  return res
-
-def colorize(message, fg=None, bg=None, bold=False, ul=False):
-  return termcolor(fg, bg, bold, ul) + message + RESET
+    print_error('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. '
+                'Please just add \'--pipe=`tput cols`\' as a parameter of pidcat-ex')
 
 tee_file = None
 if not empty(args.file_name):

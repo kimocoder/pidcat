@@ -33,10 +33,10 @@ On top of original [pidcat][1], this fork will mainly provide these additional f
                         as well: `--rgrep`, `--rhl`, `--rgrepv`
  * `--pipe`: it supports the script running in a pipe mode. For example,
    ``adb -d logcat | pidcat-ex --pipe `tput cols` com.testapp``.
-   This is very useful if you want to use 3rd party tool to filter
+   This is very useful if you want to use 3rd-party tool to filter
    adb output, such as grepping, highlighting. For example,
    ``adb -d logcat | h -i 'battery' | pidcat-ex --pipe `tput cols` com.testapp``.
-   [`h`][2] is a keyword highlighting utility.
+   [`h`][4] is a 3rd-party keyword highlighting utility.
    The option needs the current terminal width provided as the parameter,
    which is easy to get in shell using command `` `tput cols` ``.
  * `--extra-header-width`: if customized header added in each log line
@@ -52,13 +52,17 @@ On top of original [pidcat][1], this fork will mainly provide these additional f
    that paths of the debug version .so dynamic library file
    and Android addr2line tool are provided
 
+If you want to use the `grep`, `highlight` and any other functions
+as a stand-alone tool so as to use it with other files or tools,
+you can check this one [`hl (A Text Highlighting Tool)`][2]
+
 Here is an example of the output of the following command:
 ```bash
     pidcat-ex --timestamp --ihl='oslog|logs|sensor\cyan|queuebatch\bg_blue|state\white|latency\bg_green|enable\magenta' --hl='screen\yellow|far\bg_yellow|event\bg_ack'
 ```
 ![Example screen](screen.png)
 
-Another example using pipe mode with 3rd-party [`h`][2] tool:
+Another example using pipe mode with 3rd-party [`h`][4] tool:
 ```bash
     adb logcat | h group android call Status Layout system pid event | pidcat-ex --pipe=`tput cols`
 ```
@@ -215,5 +219,6 @@ Include these lines in your `.bashrc`, `.zshrc` or `.bash_profile`.
 *Note:* `<path to Android SDK>` should be absolute and not relative.
 
  [1]: https://github.com/JakeWharton/pidcat
- [2]: https://github.com/paoloantinori/hhighlighter
+ [2]: https://github.com/healthluck/hl
  [3]: http://developer.android.com/sdk/
+ [4]: https://github.com/paoloantinori/hhighlighter

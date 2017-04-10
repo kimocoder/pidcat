@@ -98,15 +98,18 @@ parser.add_argument('--igrepv', dest='igrepv_words', metavar='WORD_LIST_TO_EXCLU
 parser.add_argument('--rgrep', dest='rgrep_words', metavar='REGEX_LIST_TO_GREP', action='append',
                     help='The same as \'--grep\', just using regular expressions in python style '
                          'as described in \'https://docs.python.org/2/library/re.html\'. '
-                         'Make sure to escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'')
+                         'In the regular expression, make sure to '
+                         'escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'')
 parser.add_argument('--rhl', dest='rhighlight_words', metavar='REGEX_LIST_TO_HIGHLIGHT', action='append',
                     help='The same as \'--hl\', just using regular expressions in python style '
                          'as described in \'https://docs.python.org/2/library/re.html\'. '
-                         'Make sure to escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'')
+                         'In the regular expression, make sure to '
+                         'escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'')
 parser.add_argument('--rgrepv', dest='rgrepv_words', metavar='REGEX_LIST_TO_EXCLUDE', action='append',
                     help='The same as \'--grepv\', just using regular expressions in python style '
                          'as described in \'https://docs.python.org/2/library/re.html\'. '
-                         'Make sure to escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'')
+                         'In the regular expression, make sure to '
+                         'escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'')
 parser.add_argument('--keep-all-errors', dest='keep_errors', action='store_true',
                     help='Do not filter any error or fatal logs from \'pidcat-ex\' output. This is quite helpful to '
                          'avoid ignoring information about exceptions, crash stacks and assertion failures')

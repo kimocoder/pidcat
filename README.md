@@ -127,18 +127,21 @@ Here are details of all additional options provided:
   --rgrep REGEX_LIST_TO_GREP
                         The same as '--grep', just using regular expressions
                         in python style as described in
-                        'https://docs.python.org/2/library/re.html'. Make sure
-                        to escape '|' with '\|', and '\' with '\\'
+                        'https://docs.python.org/2/library/re.html'. In the
+                        regular expression, make sure to escape '|' with '\|',
+                        and '\' with '\\'
   --rhl REGEX_LIST_TO_HIGHLIGHT
                         The same as '--hl', just using regular expressions in
                         python style as described in
-                        'https://docs.python.org/2/library/re.html'. Make sure
-                        to escape '|' with '\|', and '\' with '\\'
+                        'https://docs.python.org/2/library/re.html'. In the
+                        regular expression, make sure to escape '|' with '\|',
+                        and '\' with '\\'
   --rgrepv REGEX_LIST_TO_EXCLUDE
                         The same as '--grepv', just using regular expressions
                         in python style as described in
-                        'https://docs.python.org/2/library/re.html'. Make sure
-                        to escape '|' with '\|', and '\' with '\\'
+                        'https://docs.python.org/2/library/re.html'. In the
+                        regular expression, make sure to escape '|' with '\|',
+                        and '\' with '\\'
   --keep-all-errors     Do not filter any error or fatal logs from 'pidcat-ex'
                         output. This is quite helpful to avoid ignoring
                         information about exceptions, crash stacks and

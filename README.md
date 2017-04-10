@@ -27,7 +27,10 @@ On top of original [pidcat][1], this fork will mainly provide these additional f
                         BG_MAGENTA, BG_CYAN, BG_WHITE`.
                         The color names with prefix 'BG_' are background colors.
                         Corresponding case-ignored options are also
-                        provided: `--igrep`, `--ihl`, `--igrev`
+                        provided: `--igrep`, `--ihl`, `--igrev`.
+                        Corresponding regular expression based
+                        options are supported
+                        as well: `--rgrep`, `--rhl`, `--rgrepv`
  * `--pipe`: it supports the script running in a pipe mode. For example,
    ``adb -d logcat | pidcat-ex --pipe `tput cols` com.testapp``.
    This is very useful if you want to use 3rd party tool to filter
@@ -117,6 +120,21 @@ Here are details of all additional options provided:
                         The same as '--hl', just ignore case
   --igrepv WORD_LIST_TO_EXCLUDE
                         The same as '--grepv', just ignore case
+  --rgrep REGEX_LIST_TO_GREP
+                        The same as '--grep', just using regular expressions
+                        in python style as described in
+                        'https://docs.python.org/2/library/re.html'. Make sure
+                        to escape '|' with '\|', and '\' with '\\'
+  --rhl REGEX_LIST_TO_HIGHLIGHT
+                        The same as '--hl', just using regular expressions in
+                        python style as described in
+                        'https://docs.python.org/2/library/re.html'. Make sure
+                        to escape '|' with '\|', and '\' with '\\'
+  --rgrepv REGEX_LIST_TO_EXCLUDE
+                        The same as '--grepv', just using regular expressions
+                        in python style as described in
+                        'https://docs.python.org/2/library/re.html'. Make sure
+                        to escape '|' with '\|', and '\' with '\\'
   --keep-all-errors     Do not filter any error or fatal logs from 'pidcat-ex'
                         output. This is quite helpful to avoid ignoring
                         information about exceptions, crash stacks and

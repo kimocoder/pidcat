@@ -89,9 +89,24 @@ parser.add_argument('--grepv', dest='grepv_words', metavar='WORD_LIST_TO_EXCLUDE
                          'overwrites \'--grepv\' for the same word they both contain. You can have multiple '
                          '\'--grepv\' options in the command line, and if so, the command will exclude the '
                          'lines containing any keywords in all \'--grepv\' options')
-parser.add_argument('--igrep', dest='igrep_words', metavar='WORD_LIST_TO_GREP', action='append', help='The same as \'--grep\', just ignore case')
-parser.add_argument('--ihl', dest='ihighlight_words', metavar='WORD_LIST_TO_HIGHLIGHT', action='append', help='The same as \'--hl\', just ignore case')
-parser.add_argument('--igrepv', dest='igrepv_words', metavar='WORD_LIST_TO_EXCLUDE', action='append', help='The same as \'--grepv\', just ignore case')
+parser.add_argument('--igrep', dest='igrep_words', metavar='WORD_LIST_TO_GREP', action='append',
+                    help='The same as \'--grep\', just ignore case')
+parser.add_argument('--ihl', dest='ihighlight_words', metavar='WORD_LIST_TO_HIGHLIGHT', action='append',
+                    help='The same as \'--hl\', just ignore case')
+parser.add_argument('--igrepv', dest='igrepv_words', metavar='WORD_LIST_TO_EXCLUDE', action='append',
+                    help='The same as \'--grepv\', just ignore case')
+parser.add_argument('--rgrep', dest='rgrep_words', metavar='REGEX_LIST_TO_GREP', action='append',
+                    help='The same as \'--grep\', just using regular expressions in python style '
+                         'as described in \'https://docs.python.org/2/library/re.html\'. '
+                         'Make sure to escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'')
+parser.add_argument('--rhl', dest='rhighlight_words', metavar='REGEX_LIST_TO_HIGHLIGHT', action='append',
+                    help='The same as \'--hl\', just using regular expressions in python style '
+                         'as described in \'https://docs.python.org/2/library/re.html\'. '
+                         'Make sure to escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'')
+parser.add_argument('--rgrepv', dest='rgrepv_words', metavar='REGEX_LIST_TO_EXCLUDE', action='append',
+                    help='The same as \'--grepv\', just using regular expressions in python style '
+                         'as described in \'https://docs.python.org/2/library/re.html\'. '
+                         'Make sure to escape \'|\' with \'\\|\', and \'\\\' with \'\\\\\'')
 parser.add_argument('--keep-all-errors', dest='keep_errors', action='store_true',
                     help='Do not filter any error or fatal logs from \'pidcat-ex\' output. This is quite helpful to '
                          'avoid ignoring information about exceptions, crash stacks and assertion failures')
@@ -195,10 +210,10 @@ def pause(tm):
     sys.stdout.write("\r\n")
 
 def print_error(error_msg):
-  print('\n' + colorize(error_msg, fg=WHITE, bg=RED, ul=True) + '\n')
+  print('\n' + colorize(error_msg, fg=RED, bold=True, ul=True) + '\n')
   pause(5)
 
-def extract_color_from_word(word):
+def extract_color_from_word_and_convert_esc_chars(word):
   word = word.replace('\|', '|')
   w = word
   c = RED
@@ -226,7 +241,7 @@ def extract_color_from_word(word):
 
 def parse_keywords(keyword_str_list):
   if empty(keyword_str_list):
-    return None
+    return []
   else:
     res = []
     for words in keyword_str_list:
@@ -234,12 +249,12 @@ def parse_keywords(keyword_str_list):
       idx = words.find('|')
       while idx != -1:
         if idx <= 0 or words[idx - 1] != '\\':
-          w, c, bg = extract_color_from_word(words[prev:idx])
+          w, c, bg = extract_color_from_word_and_convert_esc_chars(words[prev:idx])
           if not empty(w):
             res.append([w, c, bg])
           prev = idx + 1
         idx = words.find('|', idx + 1)
-      w, c, bg = extract_color_from_word(words[prev:])
+      w, c, bg = extract_color_from_word_and_convert_esc_chars(words[prev:])
       if not empty(w):
         res.append([w, c, bg])
     return res
@@ -250,6 +265,9 @@ excluded_words = parse_keywords(args.grepv_words)
 igrep_words_with_color = parse_keywords(args.igrep_words)
 ihighlight_words_with_color = parse_keywords(args.ihighlight_words)
 iexcluded_words = parse_keywords(args.igrepv_words)
+rgrep_words_with_color = parse_keywords(args.rgrep_words)
+rhighlight_words_with_color = parse_keywords(args.rhighlight_words)
+rexcluded_words = parse_keywords(args.rgrepv_words)
 
 package = args.package
 
@@ -321,6 +339,7 @@ def output_line(line, keep_line_on_stdout = True):
     if not empty(args.hide_header_regex):
       line, header_hidden = hide_header(line, args.hide_header_regex)
     print(line)
+    sys.stdout.flush()
     if tee_file is not None:
       tee_file.write(line)
       tee_file.write('\n')
@@ -328,15 +347,29 @@ def output_line(line, keep_line_on_stdout = True):
 
 def does_match_grep(message, grep_words_with_color, ignore_case):
   if not empty(grep_words_with_color):
-    for word, color, bg in grep_words_with_color:
+    for word, c, bg in grep_words_with_color:
       if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
+        return True
+  return False
+
+def does_match_regex_grep(message, regex_grep_words_with_color):
+  if not empty(regex_grep_words_with_color):
+    for pattern, c, bg in regex_grep_words_with_color:
+      if len(pattern) > 0 and re.search(pattern, message) is not None:
         return True
   return False
 
 def does_match_grepv(message, grepv_words, ignore_case):
   if not empty(grepv_words):
-    for word, color, bg in grepv_words:
+    for word, c, bg in grepv_words:
       if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
+        return True
+  return False
+
+def does_match_regex_grepv(message, rgrepv_words):
+  if not empty(rgrepv_words):
+    for pattern, c, bg in rgrepv_words:
+      if len(pattern) > 0 and re.search(pattern, message) is not None:
         return True
   return False
 
@@ -356,33 +389,27 @@ def colorize_substr(str, start_index, end_index, color, bg):
   colored_word = colorize(str[start_index:end_index], fg_color, bg_color, bold=True, ul=ul)
   return str[:start_index] + colored_word + str[end_index:], start_index + len(colored_word)
 
-def highlight(line, words_to_color, ignore_case=False, prev_line=None, next_line=None):
-  for word, color, bg in words_to_color:
+def highlight(line, words_to_color, ignore_case=False, is_regex=False):
+  for word, c, bg in words_to_color:
     if len(word) > 0:
       index = 0
+      word_len = len(word)
       while True:
         try:
-          if ignore_case:
+          if is_regex:
+            re_res = re.search(word, line[index:])
+            if re_res:
+                index = re_res.start()
+                word_len = re_res.end() - re_res.start()
+            else:
+                break
+          elif ignore_case:
             index = line.upper().index(word.upper(), index)
           else:
             index = line.index(word, index)
         except ValueError:
           break
-        line, index = colorize_substr(line, index, index + len(word), color, bg)
-
-      if not empty(prev_line):
-        for i in range(1, len(word)):
-          wrapped_word = prev_line[-i:] + line[:len(word) - i]
-          if (not ignore_case and word == wrapped_word) or (ignore_case and word.upper() == wrapped_word.upper()):
-            line, index = colorize_substr(line, 0, len(word) - i, color, bg)
-            break
-
-      if not empty(next_line):
-        for i in range(1, len(word)):
-          wrapped_word = line[-i:] + next_line[:len(word) - i]
-          if (not ignore_case and word == wrapped_word) or (ignore_case and word.upper() == wrapped_word.upper()):
-            line, index = colorize_substr(line, len(line) - i, len(line), color, bg)
-            break
+        line, index = colorize_substr(line, index, index + word_len, c, bg)
 
   return line
 
@@ -730,16 +757,18 @@ try:
 
       matches_grep = does_match_grep(message, grep_words_with_color, False)
       matches_igrep = does_match_grep(message, igrep_words_with_color, True)
+      machtes_rgrep = does_match_regex_grep(message, rgrep_words_with_color)
 
       matches_grepv = does_match_grepv(message, excluded_words, False)
       matches_igrepv = does_match_grepv(message, iexcluded_words, True)
+      machtes_rgrepv = does_match_regex_grepv(message, rexcluded_words)
 
-      if matches_grep or matches_igrep:
+      if matches_grep or matches_igrep or machtes_rgrep:
         keep_line_on_stdout = True
-      elif matches_grepv or matches_igrepv:
+      elif matches_grepv or matches_igrepv or machtes_rgrepv:
         keep_line_on_stdout = False
       else:
-        if empty(grep_words_with_color) and empty(igrep_words_with_color):
+        if empty(grep_words_with_color) and empty(igrep_words_with_color) and empty(rgrep_words_with_color):
           keep_line_on_stdout = True
         else:
           keep_line_on_stdout = False
@@ -772,21 +801,13 @@ try:
                 break
           break
 
-    words_to_color = []
-    if grep_words_with_color is not None:
-      words_to_color += grep_words_with_color
-    if highlight_words_with_color is not None:
-      words_to_color += highlight_words_with_color
-
-    iwords_to_color = []
-    if igrep_words_with_color is not None:
-      iwords_to_color += igrep_words_with_color
-    if ihighlight_words_with_color is not None:
-      iwords_to_color += ihighlight_words_with_color
+    words_to_color = grep_words_with_color + highlight_words_with_color
+    iwords_to_color = igrep_words_with_color + ihighlight_words_with_color
+    rwords_to_color = rgrep_words_with_color + rhighlight_words_with_color
 
     message = highlight(message, words_to_color, ignore_case=False)
     message = highlight(message, iwords_to_color, ignore_case=True)
-
+    message = highlight(message, rwords_to_color, is_regex=True)
 
     message = add_timestap_header(time, message)
 

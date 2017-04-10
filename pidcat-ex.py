@@ -787,7 +787,8 @@ try:
         matches_native_crash = NATIVE_CRASH_LINE.match(message[i:])
         if matches_native_crash:
           crash_addr, crash_dir, crash_file_name, crash_ext_name = matches_native_crash.groups()
-          crash_ext_name = crash_ext_name.split()[0]
+          if crash_ext_name is not None:
+            crash_ext_name = crash_ext_name.split()[0]
           for tool, lib_path in args.addr2line:
             matches_lib_path = FILE_PATH.match(lib_path)
             if matches_lib_path:

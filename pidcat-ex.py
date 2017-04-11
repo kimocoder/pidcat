@@ -208,7 +208,7 @@ def colorize(message, fg=None, bg=None, bold=False, ul=False):
 
 def pause(tm):
     for i in range(0, tm - 1):
-        sys.stdout.write("Continue in %d seconds ...\r" % (tm - i))
+        sys.stdout.write("Continue anyway in %d seconds ...\r" % (tm - i))
         time.sleep(1)
     sys.stdout.write("\r\n")
 

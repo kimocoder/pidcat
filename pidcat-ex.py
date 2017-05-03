@@ -140,16 +140,27 @@ parser.add_argument('--hide-header', dest='hide_header_regex', action='append',
                          'style as described in \'https://docs.python.org/2/library/re.html\'. You can specify '
                          'multiple \'--hide-header\' options and if the header matches any of them, it will be '
                          'removed from output')
-parser.add_argument('--addr2line', nargs=2, type=str, dest='addr2line',
-                    metavar=('ADDR2LINE_TOOL_PATH', 'NATIVE_DEBUG_SO_LIB_FILE_PATH'), action='append',
-                    help='Note that this option needs 2 parameters. This option will help you automatically '
+parser.add_argument('--addr2line-tool', type=str, dest='addr2line_tool',
+                    metavar=('ADDR2LINE_TOOL_PATH'),
+                    help='This option along with \'--addr2line-bin\' (you have to give values to both these parameters) '
+                         'will help you automatically '
                          'symbolicate the native crash addresses found in the log that match your '
+                         'native code binary file with debug information, such as '
                          '\'.so\' lib file. \'ADDR2LINE_TOOL_PATH\' is the path to '
-                         'the \'xxx-addr2line\', which should be found in your Android SDK directory. '
-                         '\'NATIVE_DEBUG_SO_LIB_FILE_PATH\' is the file path to '
-                         'your debug version \'.so\' dynamic library with debug symbols in it. '
-                         'You can provide multiple \'--addr2line\' options to symbolicate '
-                         'crashes of multiple native libraries. Note that your \'NATIVE_DEBUG_SO_LIB_FILE_PATH\' '
+                         'the \'xxx-addr2line\', which should be found in your Android SDK directory. ')
+
+parser.add_argument('--addr2line-bin', type=str, dest='addr2line_bin',
+                    metavar=('NATIVE_DEBUG_BIN_FILE_PATH'), action='append',
+                    help='This option along with `--addr2line-tool` (you have to give values to both these parameters) '
+                         'will help you automatically '
+                         'symbolicate the native crash addresses found in the log that match your '
+                         'native code binary file with debug information, such as '
+                         '\'.so\' lib file. \'NATIVE_DEBUG_SO_LIB_FILE_PATH\' is the file path to '
+                         'your debug version native binary file with debug symbols in it. '
+                         'You can provide multiple \'--addr2line-bin\' options to symbolicate '
+                         'crashes of multiple native binary files. The script can automatically match the correct '
+                         'binary file for each crash log line. '
+                         'Note that your \'NATIVE_DEBUG_SO_LIB_FILE_PATH\' '
                          'version has to match the addresses in the crash log, otherwise, the symbolicated result '
                          'would not be correct')
 
@@ -753,7 +764,7 @@ try:
 
     if args.keep_errors and (level == 'F' or level == 'E'):
       keep_line_on_stdout = True
-    elif args.addr2line and NATIVE_CRASH_LINE.match(message):
+    elif args.addr2line_tool and args.addr2line_bin and NATIVE_CRASH_LINE.match(message):
       keep_line_on_stdout = True
     else:
       keep_line_on_stdout = False
@@ -782,14 +793,15 @@ try:
       message = matcher.sub(replace, message)
 
     addr2line_lines = []
-    if (level == 'F' or level == 'E') and args.addr2line:
+    if (level == 'F' or level == 'E') and args.addr2line_tool and args.addr2line_bin:
       for i in range(0, len(message)):
         matches_native_crash = NATIVE_CRASH_LINE.match(message[i:])
         if matches_native_crash:
           crash_addr, crash_dir, crash_file_name, crash_ext_name = matches_native_crash.groups()
           if crash_ext_name is not None:
             crash_ext_name = crash_ext_name.split()[0]
-          for tool, lib_path in args.addr2line:
+          tool = args.addr2line_tool
+          for lib_path in args.addr2line_bin:
             matches_lib_path = FILE_PATH.match(lib_path)
             if matches_lib_path:
               lib_dir, lib_file_name, lib_ext_name = matches_lib_path.groups()

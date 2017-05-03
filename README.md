@@ -47,9 +47,9 @@ On top of original [pidcat][1], this fork will mainly provide these additional f
  * `--tee`, `--tee-pidcat`, `--tee-adb`: it supports to output
    the filtered and un-filtered `pidcat` result as well as the original
    `adb` result to specified files, which is useful for checking log later.
- * `--addr2line`: if you care about native code (C/C++) crash, this option
+ * `--addr2line-tool`, `--addr2line-bin`: if you care about native code (C/C++) crash, this option
    can automatically symbolicate the addresses to lines in code, given
-   that paths of the debug version .so dynamic library file
+   that paths of the corresponding debug version native binary file (such as .so file)
    and Android addr2line tool are provided
 
 If you want to use the `grep`, `highlight` and any other functions
@@ -184,19 +184,29 @@ Here are details of all additional options provided:
                         specify multiple '--hide-header' options and if the
                         header matches any of them, it will be removed from
                         output
-  --addr2line ADDR2LINE_TOOL_PATH NATIVE_DEBUG_SO_LIB_FILE_PATH
-                        Note that this option needs 2 parameters. This option
-                        will help you automatically symbolicate the native
-                        crash addresses found in the log that match your '.so'
-                        lib file. 'ADDR2LINE_TOOL_PATH' is the path to the
-                        'xxx-addr2line', which should be found in your Android
-                        SDK directory. 'NATIVE_DEBUG_SO_LIB_FILE_PATH' is the
-                        file path to your debug version '.so' dynamic library
-                        with debug symbols in it. You can provide multiple '--
-                        addr2line' options to symbolicate crashes of multiple
-                        native libraries. Note that your
-                        'NATIVE_DEBUG_SO_LIB_FILE_PATH' version has to match
-                        the addresses in the crash log, otherwise, the
+  --addr2line-tool ADDR2LINE_TOOL_PATH
+                        This option along with '--addr2line-bin' (you have to
+                        give values to both these parameters) will help you
+                        automatically symbolicate the native crash addresses
+                        found in the log that match your native code binary
+                        file with debug information, such as '.so' lib file.
+                        'ADDR2LINE_TOOL_PATH' is the path to the 'xxx-
+                        addr2line', which should be found in your Android SDK
+                        directory.
+  --addr2line-bin NATIVE_DEBUG_BIN_FILE_PATH
+                        This option along with `--addr2line-tool` (you have to
+                        give values to both these parameters) will help you
+                        automatically symbolicate the native crash addresses
+                        found in the log that match your native code binary
+                        file with debug information, such as '.so' lib file.
+                        'NATIVE_DEBUG_SO_LIB_FILE_PATH' is the file path to
+                        your debug version native binary file with debug
+                        symbols in it. You can provide multiple '--addr2line-
+                        bin' options to symbolicate crashes of multiple native
+                        binary files. The script can automatically match the
+                        correct binary file for each crash log line. Note that
+                        your 'NATIVE_DEBUG_SO_LIB_FILE_PATH' version has to
+                        match the addresses in the crash log, otherwise, the
                         symbolicated result would not be correct
 </pre>
 

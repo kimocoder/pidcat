@@ -193,29 +193,31 @@ contrast_color_dict = {BLACK: WHITE, RED: WHITE, GREEN: BLACK, YELLOW: BLACK,
                        BLUE: WHITE, MAGENTA: WHITE, CYAN: BLACK, WHITE: BLACK}
 
 def empty(vector):
-  return vector is None or len(vector) <= 0
+    return vector is None or len(vector) <= 0
 
 RESET = '\033[0m'
 EOL = '\033[K'
 
 def termcolor(fg=None, bg=None, bold=False, ul=False):
-  codes = []
-  if fg is not None:
-    codes.append('3%d' % fg)
-  if bg is not None:
-    codes.append('10%d' % bg)
-  res = '\033['
-  if bold:
-    res += '1;'
-  if ul:
-    res += '4;'
-  if codes:
-    res += ';'.join(codes)
-  res += 'm'
-  return res
+    codes = []
+    if fg is not None:
+        codes.append('3%d' % fg)
+    if bg is not None:
+        codes.append('10%d' % bg)
+    res = '\033['
+    if bold:
+        res += '1;'
+    if ul:
+        res += '4;'
+    if codes:
+        res += ';'.join(codes)
+    res += 'm'
+    return res
+
 
 def colorize(message, fg=None, bg=None, bold=False, ul=False):
-  return termcolor(fg, bg, bold, ul) + message + RESET
+    return termcolor(fg, bg, bold, ul) + message + RESET
+
 
 def pause(tm):
     for i in range(0, tm - 1):
@@ -223,55 +225,57 @@ def pause(tm):
         time.sleep(1)
     sys.stdout.write("\r\n")
 
+
 def print_error(error_msg):
-  print('\n' + colorize(error_msg, fg=RED, bold=True, ul=True) + '\n')
-  pause(5)
+    print('\n' + colorize(error_msg, fg=RED, bold=True, ul=True) + '\n')
+    pause(5)
+
 
 def extract_color_from_word_and_convert_esc_chars(word):
-  word = word.replace('\|', '|')
-  w = word
-  c = RED
-  bg = False
-  delimiter = '\\'
-  index = word.rfind(delimiter)
-  while index > 0 and word[index - 1] == '\\':
-    index = word.rfind(delimiter, 0, index - 1)
-  if index != -1:
-    w = word[0:index]
-    raw_color_word = word[index + len(delimiter):]
-    try:
-      color_word = raw_color_word.upper()
-      if color_word[:3] == 'BG_':
-        bg = True
-        color_word = color_word[3:]
-      c = color_dict[color_word]
-    except KeyError:
-      print_error('Wrong color name: \'' + raw_color_word + '\'')
-      c = RED
-      bg = False
-  w = w.replace('\\\\', '\\')
-  return w, c, bg
+    word = word.replace('\|', '|')
+    w = word
+    c = RED
+    bg = False
+    delimiter = '\\'
+    index = word.rfind(delimiter)
+    while index > 0 and word[index - 1] == '\\':
+        index = word.rfind(delimiter, 0, index - 1)
+    if index != -1:
+        w = word[0:index]
+        raw_color_word = word[index + len(delimiter):]
+        try:
+            color_word = raw_color_word.upper()
+            if color_word[:3] == 'BG_':
+                bg = True
+                color_word = color_word[3:]
+            c = color_dict[color_word]
+        except KeyError:
+            print_error('Wrong color name: \'' + raw_color_word + '\'')
+            c = RED
+            bg = False
+    w = w.replace('\\\\', '\\')
+    return w, c, bg
 
 
 def parse_keywords(keyword_str_list):
-  if empty(keyword_str_list):
-    return []
-  else:
-    res = []
-    for words in keyword_str_list:
-      prev = 0
-      idx = words.find('|')
-      while idx != -1:
-        if idx <= 0 or words[idx - 1] != '\\':
-          w, c, bg = extract_color_from_word_and_convert_esc_chars(words[prev:idx])
-          if not empty(w):
-            res.append([w, c, bg])
-          prev = idx + 1
-        idx = words.find('|', idx + 1)
-      w, c, bg = extract_color_from_word_and_convert_esc_chars(words[prev:])
-      if not empty(w):
-        res.append([w, c, bg])
-    return res
+    if empty(keyword_str_list):
+        return []
+    else:
+        res = []
+        for words in keyword_str_list:
+            prev = 0
+            idx = words.find('|')
+            while idx != -1:
+                if idx <= 0 or words[idx - 1] != '\\':
+                    w, c, bg = extract_color_from_word_and_convert_esc_chars(words[prev:idx])
+                    if not empty(w):
+                        res.append([w, c, bg])
+                    prev = idx + 1
+                idx = words.find('|', idx + 1)
+            w, c, bg = extract_color_from_word_and_convert_esc_chars(words[prev:])
+            if not empty(w):
+                res.append([w, c, bg])
+        return res
 
 grep_words_with_color = parse_keywords(args.grep_words)
 highlight_words_with_color = parse_keywords(args.highlight_words)
@@ -287,20 +291,20 @@ package = args.package
 
 base_adb_command = ['adb']
 if args.device_serial:
-  base_adb_command.extend(['-s', args.device_serial])
+    base_adb_command.extend(['-s', args.device_serial])
 if args.use_device:
-  base_adb_command.append('-d')
+    base_adb_command.append('-d')
 if args.use_emulator:
-  base_adb_command.append('-e')
+    base_adb_command.append('-e')
 
 if args.current_app:
-  system_dump_command = base_adb_command + ["shell", "dumpsys", "activity", "activities"]
-  system_dump = subprocess.Popen(system_dump_command, stdout=PIPE, stderr=PIPE).communicate()[0]
-  running_package_name = re.search(".*TaskRecord.*A[= ]([^ ^}]*)", system_dump).group(1)
-  package.append(running_package_name)
+    system_dump_command = base_adb_command + ["shell", "dumpsys", "activity", "activities"]
+    system_dump = subprocess.Popen(system_dump_command, stdout=PIPE, stderr=PIPE).communicate()[0]
+    running_package_name = re.search(".*TaskRecord.*A[= ]([^ ^}]*)", system_dump).group(1)
+    package.append(running_package_name)
 
 if len(package) == 0:
-  args.all = True
+    args.all = True
 
 # Store the names of packages for which to match all processes.
 catchall_package = filter(lambda package: package.find(":") == -1, package)
@@ -313,248 +317,262 @@ header_size = args.tag_width + 1 + 3 + 1  # space, level, space
 
 width = args.terminal_width_for_pipe_mode
 if width == -1:
-  try:
-    # Get the current terminal width
-    import fcntl
-    import termios
-    import struct
-    h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
-  except:
-    width = 100
-    print_error('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. '
-                'Please just add \'--pipe=`tput cols`\' as a parameter of pidcat-ex')
+    try:
+        # Get the current terminal width
+        import fcntl
+        import termios
+        import struct
+        h, width = struct.unpack('hh', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('hh', 0, 0)))
+    except:
+        width = 100
+        print_error('PLEASE SPECIFY TERMINAL WIDTH !!! It looks the script is running in pipe mode. '
+                    'Please just add \'--pipe=`tput cols`\' as a parameter of pidcat-ex')
 
 tee_file = None
 if not empty(args.file_name):
-  tee_file = open(args.file_name, 'w')
+    tee_file = open(args.file_name, 'w')
 
 tee_pidcat_file = None
 if not empty(args.pidcat_file_name):
-  tee_pidcat_file = open(args.pidcat_file_name, 'w')
+    tee_pidcat_file = open(args.pidcat_file_name, 'w')
 
 tee_adb_file = None
 if not empty(args.adb_output_file_name):
-  tee_adb_file = open(args.adb_output_file_name, 'w')
+    tee_adb_file = open(args.adb_output_file_name, 'w')
+
 
 def hide_header(line, regex_list):
-  for regex in regex_list:
-    matches = re.match(regex, line)
-    if matches:
-      return line[matches.end():], True
-  return line, False
+    for regex in regex_list:
+        matches = re.match(regex, line)
+        if matches:
+            return line[matches.end():], True
+    return line, False
+
 
 def output_line(line, keep_line_on_stdout = True):
-  if tee_pidcat_file is not None:
-    tee_pidcat_file.write(line)
-    tee_pidcat_file.write('\n')
-    tee_pidcat_file.flush()
+    if tee_pidcat_file is not None:
+        tee_pidcat_file.write(line)
+        tee_pidcat_file.write('\n')
+        tee_pidcat_file.flush()
 
-  if keep_line_on_stdout:
-    if not empty(args.hide_header_regex):
-      line, header_hidden = hide_header(line, args.hide_header_regex)
-    print(line)
-    sys.stdout.flush()
-    if tee_file is not None:
-      tee_file.write(line)
-      tee_file.write('\n')
-      tee_file.flush()
+    if keep_line_on_stdout:
+        if not empty(args.hide_header_regex):
+            line, header_hidden = hide_header(line, args.hide_header_regex)
+        print(line)
+        sys.stdout.flush()
+        if tee_file is not None:
+            tee_file.write(line)
+            tee_file.write('\n')
+            tee_file.flush()
+
 
 def does_match_grep(message, grep_words_with_color, ignore_case):
-  if not empty(grep_words_with_color):
-    for word, c, bg in grep_words_with_color:
-      if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
-        return True
-  return False
+    if not empty(grep_words_with_color):
+        for word, c, bg in grep_words_with_color:
+            if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
+                return True
+    return False
+
 
 def does_match_regex_grep(message, regex_grep_words_with_color):
-  if not empty(regex_grep_words_with_color):
-    for pattern, c, bg in regex_grep_words_with_color:
-      if len(pattern) > 0 and re.search(pattern, message) is not None:
-        return True
-  return False
+    if not empty(regex_grep_words_with_color):
+        for pattern, c, bg in regex_grep_words_with_color:
+            if len(pattern) > 0 and re.search(pattern, message) is not None:
+                return True
+    return False
+
 
 def does_match_grepv(message, grepv_words, ignore_case):
-  if not empty(grepv_words):
-    for word, c, bg in grepv_words:
-      if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
-        return True
-  return False
+    if not empty(grepv_words):
+        for word, c, bg in grepv_words:
+            if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
+                return True
+    return False
+
 
 def does_match_regex_grepv(message, rgrepv_words):
-  if not empty(rgrepv_words):
-    for pattern, c, bg in rgrepv_words:
-      if len(pattern) > 0 and re.search(pattern, message) is not None:
-        return True
-  return False
+    if not empty(rgrepv_words):
+        for pattern, c, bg in rgrepv_words:
+            if len(pattern) > 0 and re.search(pattern, message) is not None:
+                return True
+    return False
+
 
 def colorize_substr(str, start_index, end_index, color, bg):
-  fg_color = None
-  bg_color = None
-  ul = False
-  if bg:
-    bg_color = color
-    try:
-      fg_color = contrast_color_dict[color]
-    except KeyError:
-      pass
-  else:
-    fg_color = color
-    ul = True
-  colored_word = colorize(str[start_index:end_index], fg_color, bg_color, bold=True, ul=ul)
-  return str[:start_index] + colored_word + str[end_index:], start_index + len(colored_word)
-
-def highlight(line, words_to_color, ignore_case=False, is_regex=False):
-  for word, c, bg in words_to_color:
-    if len(word) > 0:
-      index = 0
-      word_len = len(word)
-      while True:
+    fg_color = None
+    bg_color = None
+    ul = False
+    if bg:
+        bg_color = color
         try:
-          if is_regex:
-            re_res = re.search(word, line[index:])
-            if re_res:
-                index = re_res.start()
-                word_len = re_res.end() - re_res.start()
-            else:
-                break
-          elif ignore_case:
-            index = line.upper().index(word.upper(), index)
-          else:
-            index = line.index(word, index)
-        except ValueError:
-          break
-        line, index = colorize_substr(line, index, index + word_len, c, bg)
+            fg_color = contrast_color_dict[color]
+        except KeyError:
+            pass
+    else:
+        fg_color = color
+        ul = True
+    colored_word = colorize(str[start_index:end_index], fg_color, bg_color, bold=True, ul=ul)
+    return str[:start_index] + colored_word + str[end_index:], start_index + len(colored_word)
 
-  return line
 
 ANSI_ESC_PATTERN = r'\x1b\[([0-9,A-Z]{1,2}(;[0-9]{1,2})*(;[0-9]{3})?)?[m|K]'
 
+
+def highlight(line, words_to_color, ignore_case=False, is_regex=False):
+    for word, c, bg in words_to_color:
+        if len(word) > 0:
+            index = 0
+            word_len = len(word)
+            i = 0
+            while index < len(line):
+                try:
+                    if is_regex:
+                        re_res = re.search(word, line[index:])
+                        if re_res:
+                            index += re_res.start()
+                            word_len = re_res.end() - re_res.start()
+                        else:
+                            break
+                    elif ignore_case:
+                        index = line.upper().index(word.upper(), index)
+                    else:
+                        index = line.index(word, index)
+                except ValueError:
+                    break
+                line, index = colorize_substr(line, index, index + word_len, c, bg)
+
+    return line
+
+
 # All ANSI escape codes are not counted in this `substr` function but are kept in the substring
 def substr(unstripped_str, start, end):
-  res = ''
-  unstripped_i = 0
-  idx = 0
-  cur_esc = ''
-  while unstripped_i < len(unstripped_str):
-    match_res = re.match(ANSI_ESC_PATTERN, unstripped_str[unstripped_i:])
-    if match_res:
-      cur_esc = unstripped_str[match_res.start() + unstripped_i:match_res.end() + unstripped_i]
-      if start <= idx <= end:
-        res += cur_esc
-      unstripped_i += match_res.end()
-    else:
-      if start <= idx < end:
-        if len(cur_esc) > 0 and idx == start and len(res) == 0:
-          res += cur_esc
-        res += unstripped_str[unstripped_i]
-      unstripped_i += 1
-      idx += 1
+    res = ''
+    unstripped_i = 0
+    idx = 0
+    cur_esc = ''
+    while unstripped_i < len(unstripped_str):
+        match_res = re.match(ANSI_ESC_PATTERN, unstripped_str[unstripped_i:])
+        if match_res:
+            cur_esc = unstripped_str[match_res.start() + unstripped_i:match_res.end() + unstripped_i]
+            if start <= idx <= end:
+                res += cur_esc
+            unstripped_i += match_res.end()
+        else:
+            if start <= idx < end:
+                if len(cur_esc) > 0 and idx == start and len(res) == 0:
+                    res += cur_esc
+                res += unstripped_str[unstripped_i]
+            unstripped_i += 1
+            idx += 1
 
-  if len(res) > 0 and res[-len(RESET):] != RESET and res[-len(EOL):] != EOL:
-    res += RESET
-  return res
+    if len(res) > 0 and res[-len(RESET):] != RESET and res[-len(EOL):] != EOL:
+        res += RESET
+    return res
+
 
 def indent_wrap(message, total_width, subsequent_indent_width):
-  if total_width == -1:
-    return message
+    if total_width == -1:
+        return message
 
-  message = message.replace('\t', ' ' * 4)
-  stripped_message = re.sub(ANSI_ESC_PATTERN, '', message)
+    message = message.replace('\t', ' ' * 4)
+    stripped_message = re.sub(ANSI_ESC_PATTERN, '', message)
 
-  wrap_area = total_width - subsequent_indent_width
-  messagebuf = ''
-  current = 0
-  while current < len(stripped_message):
-    next_pos = min(current + wrap_area, len(stripped_message))
-    messagebuf += substr(message, current, next_pos)
-    if next_pos < len(message):
-      messagebuf += '\n'
-      messagebuf += ' ' * subsequent_indent_width
-    current = next_pos
-  return messagebuf
+    wrap_area = total_width - subsequent_indent_width
+    messagebuf = ''
+    current = 0
+    while current < len(stripped_message):
+        next_pos = min(current + wrap_area, len(stripped_message))
+        messagebuf += substr(message, current, next_pos)
+        if next_pos < len(message):
+            messagebuf += '\n'
+            messagebuf += ' ' * subsequent_indent_width
+        current = next_pos
+    return messagebuf
+
 
 def split_to_lines(message, total_width, initial_indent_width=0, subsequent_indent_width=0):
-  if total_width == -1:
-    return message
-  message = message.replace('\t', ' ' * 4)
-  lines = []
+    if total_width == -1:
+        return message
+    message = message.replace('\t', ' ' * 4)
+    lines = []
 
-  current_indent = initial_indent_width
-  current_line = ''
-  current_esc = RESET
-  current_line_stripped_len = 0
-  idx = 0
-  while idx < len(message):
-    matches = re.match(ANSI_ESC_PATTERN, message[idx:])
-    if matches:
-      current_esc = message[idx + matches.start():idx + matches.end()]
-      current_line += current_esc
-      idx += matches.end()
-    else:
-      current_line += message[idx]
-      current_line_stripped_len += 1
-      if current_line_stripped_len >= total_width - current_indent:
-        if current_line[-len(RESET):] != RESET:
-          current_line += RESET
-        lines.append(current_line)
-        current_indent = subsequent_indent_width
-        if current_esc == RESET:
-          current_line = ''
+    current_indent = initial_indent_width
+    current_line = ''
+    current_esc = RESET
+    current_line_stripped_len = 0
+    idx = 0
+    while idx < len(message):
+        matches = re.match(ANSI_ESC_PATTERN, message[idx:])
+        if matches:
+            current_esc = message[idx + matches.start():idx + matches.end()]
+            current_line += current_esc
+            idx += matches.end()
         else:
-          current_line = current_esc
-        current_line_stripped_len = 0
-      idx += 1
-  if len(current_line) > 0:
-    lines.append(current_line)
-  return lines
+            current_line += message[idx]
+            current_line_stripped_len += 1
+            if current_line_stripped_len >= total_width - current_indent:
+                if current_line[-len(RESET):] != RESET:
+                    current_line += RESET
+                lines.append(current_line)
+                current_indent = subsequent_indent_width
+                if current_esc == RESET:
+                    current_line = ''
+                else:
+                    current_line = current_esc
+                current_line_stripped_len = 0
+            idx += 1
+    if len(current_line) > 0:
+        lines.append(current_line)
+    return lines
 
 
 LAST_USED = [RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN]
 KNOWN_TAGS = {
-  'dalvikvm': WHITE,
-  'Process': WHITE,
-  'ActivityManager': WHITE,
-  'ActivityThread': WHITE,
-  'AndroidRuntime': CYAN,
-  'jdwp': WHITE,
-  'StrictMode': WHITE,
-  'DEBUG': YELLOW,
+    'dalvikvm': WHITE,
+    'Process': WHITE,
+    'ActivityManager': WHITE,
+    'ActivityThread': WHITE,
+    'AndroidRuntime': CYAN,
+    'jdwp': WHITE,
+    'StrictMode': WHITE,
+    'DEBUG': YELLOW,
 }
 
+
 def allocate_color(tag):
-  # this will allocate a unique format for the given tag
-  # since we dont have very many colors, we always keep track of the LRU
-  if tag not in KNOWN_TAGS:
-    KNOWN_TAGS[tag] = LAST_USED[0]
-  color = KNOWN_TAGS[tag]
-  if color in LAST_USED:
-    LAST_USED.remove(color)
-    LAST_USED.append(color)
-  return color
+    # this will allocate a unique format for the given tag
+    # since we dont have very many colors, we always keep track of the LRU
+    if tag not in KNOWN_TAGS:
+        KNOWN_TAGS[tag] = LAST_USED[0]
+    color = KNOWN_TAGS[tag]
+    if color in LAST_USED:
+        LAST_USED.remove(color)
+        LAST_USED.append(color)
+    return color
 
 
 RULES = {
-  # StrictMode policy violation; ~duration=319 ms: android.os.StrictMode$StrictModeDiskWriteViolation: policy=31 violation=1
-  re.compile(r'^(StrictMode policy violation)(; ~duration=)(\d+ ms)')
-  : r'%s\1%s\2%s\3%s' % (termcolor(RED), RESET, termcolor(YELLOW), RESET),
+    # StrictMode policy violation; ~duration=319 ms: android.os.StrictMode$StrictModeDiskWriteViolation: policy=31 violation=1
+    re.compile(r'^(StrictMode policy violation)(; ~duration=)(\d+ ms)')
+    : r'%s\1%s\2%s\3%s' % (termcolor(RED), RESET, termcolor(YELLOW), RESET),
 }
 
 # Only enable GC coloring if the user opted-in
 if args.color_gc:
-  # GC_CONCURRENT freed 3617K, 29% free 20525K/28648K, paused 4ms+5ms, total 85ms
-  key = re.compile(r'^(GC_(?:CONCURRENT|FOR_M?ALLOC|EXTERNAL_ALLOC|EXPLICIT) )(freed <?\d+.)(, \d+\% free \d+./\d+., )(paused \d+ms(?:\+\d+ms)?)')
-  val = r'\1%s\2%s\3%s\4%s' % (termcolor(GREEN), RESET, termcolor(YELLOW), RESET)
+    # GC_CONCURRENT freed 3617K, 29% free 20525K/28648K, paused 4ms+5ms, total 85ms
+    key = re.compile(r'^(GC_(?:CONCURRENT|FOR_M?ALLOC|EXTERNAL_ALLOC|EXPLICIT) )(freed <?\d+.)(, \d+\% free \d+./\d+., )(paused \d+ms(?:\+\d+ms)?)')
+    val = r'\1%s\2%s\3%s\4%s' % (termcolor(GREEN), RESET, termcolor(YELLOW), RESET)
 
-  RULES[key] = val
+    RULES[key] = val
 
 
 TAGTYPES = {
-  'V': colorize(' V ', fg=WHITE, bg=BLACK),
-  'D': colorize(' D ', fg=WHITE, bg=BLUE),
-  'I': colorize(' I ', fg=BLACK, bg=GREEN),
-  'W': colorize(' W ', fg=BLACK, bg=YELLOW),
-  'E': colorize(' E ', fg=WHITE, bg=RED),
-  'F': colorize(' F ', fg=WHITE, bg=RED),
+    'V': colorize(' V ', fg=WHITE, bg=BLACK),
+    'D': colorize(' D ', fg=WHITE, bg=BLUE),
+    'I': colorize(' I ', fg=BLACK, bg=GREEN),
+    'W': colorize(' W ', fg=BLACK, bg=YELLOW),
+    'E': colorize(' E ', fg=WHITE, bg=RED),
+    'F': colorize(' F ', fg=WHITE, bg=RED),
 }
 
 adb_command = base_adb_command[:]
@@ -563,281 +581,287 @@ adb_command.extend(['-v', 'time', 'brief'])
 
 # Clear log before starting logcat
 if args.clear_logcat:
-  adb_clear_command = list(adb_command)
-  adb_clear_command.append('-c')
-  adb_clear = subprocess.Popen(adb_clear_command)
+    adb_clear_command = list(adb_command)
+    adb_clear_command.append('-c')
+    adb_clear = subprocess.Popen(adb_clear_command)
 
-  while adb_clear.poll() is None:
-    pass
+    while adb_clear.poll() is None:
+        pass
 
 # This is a ducktype of the subprocess.Popen object
 class FakeStdinProcess():
-  def __init__(self):
-    self.stdout = sys.stdin
-  def poll(self):
-    return None
+    def __init__(self):
+        self.stdout = sys.stdin
+    def poll(self):
+        return None
 
 if sys.stdin.isatty():
-  adb = subprocess.Popen(adb_command, stdin=PIPE, stdout=PIPE)
+    adb = subprocess.Popen(adb_command, stdin=PIPE, stdout=PIPE)
 else:
-  adb = FakeStdinProcess()
+    adb = FakeStdinProcess()
 pids = set()
 last_tag = None
 app_pid = None
 
+
 def match_packages(token):
-  if len(package) == 0:
-    return True
-  if token in named_processes:
-    return True
-  index = token.find(':')
-  return (token in catchall_package) if index == -1 else (token[:index] in catchall_package)
+    if len(package) == 0:
+        return True
+    if token in named_processes:
+        return True
+    index = token.find(':')
+    return (token in catchall_package) if index == -1 else (token[:index] in catchall_package)
+
 
 def parse_death(tag, message):
-  if tag != 'ActivityManager':
+    if tag != 'ActivityManager':
+        return None, None
+    kill = PID_KILL.match(message)
+    if kill:
+        pid = kill.group(1)
+        package_line = kill.group(2)
+        if match_packages(package_line) and pid in pids:
+            return pid, package_line
+    leave = PID_LEAVE.match(message)
+    if leave:
+        pid = leave.group(2)
+        package_line = leave.group(1)
+        if match_packages(package_line) and pid in pids:
+            return pid, package_line
+    death = PID_DEATH.match(message)
+    if death:
+        pid = death.group(2)
+        package_line = death.group(1)
+        if match_packages(package_line) and pid in pids:
+            return pid, package_line
     return None, None
-  kill = PID_KILL.match(message)
-  if kill:
-    pid = kill.group(1)
-    package_line = kill.group(2)
-    if match_packages(package_line) and pid in pids:
-      return pid, package_line
-  leave = PID_LEAVE.match(message)
-  if leave:
-    pid = leave.group(2)
-    package_line = leave.group(1)
-    if match_packages(package_line) and pid in pids:
-      return pid, package_line
-  death = PID_DEATH.match(message)
-  if death:
-    pid = death.group(2)
-    package_line = death.group(1)
-    if match_packages(package_line) and pid in pids:
-      return pid, package_line
-  return None, None
+
 
 def parse_start_proc(line):
-  start = PID_START_5_1.match(line)
-  if start is not None:
-    line_pid, line_package, target = start.groups()
-    return line_package, target, line_pid, '', ''
-  start = PID_START.match(line)
-  if start is not None:
-    line_package, target, line_pid, line_uid, line_gids = start.groups()
-    return line_package, target, line_pid, line_uid, line_gids
-  start = PID_START_DALVIK.match(line)
-  if start is not None:
-    line_pid, line_package, line_uid = start.groups()
-    return line_package, '', line_pid, line_uid, ''
-  return None
+    start = PID_START_5_1.match(line)
+    if start is not None:
+        line_pid, line_package, target = start.groups()
+        return line_package, target, line_pid, '', ''
+    start = PID_START.match(line)
+    if start is not None:
+        line_package, target, line_pid, line_uid, line_gids = start.groups()
+        return line_package, target, line_pid, line_uid, line_gids
+    start = PID_START_DALVIK.match(line)
+    if start is not None:
+        line_pid, line_package, line_uid = start.groups()
+        return line_package, '', line_pid, line_uid, ''
+    return None
+
 
 def tag_in_tags_regex(tag, tags):
-  return any(re.match(r'^' + t + r'$', tag) for t in map(str.strip, tags))
+    return any(re.match(r'^' + t + r'$', tag) for t in map(str.strip, tags))
 
 ps_command = base_adb_command + ['shell', 'ps']
 ps_pid = subprocess.Popen(ps_command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 while True:
-  try:
-    line = ps_pid.stdout.readline().decode('utf-8', 'replace').strip()
-  except KeyboardInterrupt:
-    print(RESET + EOL + '\n')
-    print('KeyboardInterrupt')
-    break
-  if len(line) == 0:
-    break
+    try:
+        line = ps_pid.stdout.readline().decode('utf-8', 'replace').strip()
+    except KeyboardInterrupt:
+        print(RESET + EOL + '\n')
+        print('KeyboardInterrupt')
+        break
+    if len(line) == 0:
+        break
 
-  pid_match = PID_LINE.match(line)
-  if pid_match is not None:
-    pid = pid_match.group(1)
-    proc = pid_match.group(2)
-    if proc in catchall_package:
-      seen_pids = True
-      pids.add(pid)
+    pid_match = PID_LINE.match(line)
+    if pid_match is not None:
+        pid = pid_match.group(1)
+        proc = pid_match.group(2)
+        if proc in catchall_package:
+            seen_pids = True
+            pids.add(pid)
+
 
 def add_timestap_header(time, line):
-  if args.add_timestamp:
-    line = time + " | " + line
-  return line
+    if args.add_timestamp:
+        line = time + " | " + line
+    return line
+
 
 if args.terminal_width_for_pipe_mode is not -1:
-  input_src = sys.stdin
+    input_src = sys.stdin
 else:
-  input_src = adb.stdout
+    input_src = adb.stdout
 
 try:
-  while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.terminal_width_for_pipe_mode is not -1:
-    try:
-      line = input_src.readline().decode('utf-8', 'replace').strip()
-      if tee_adb_file is not None:
-        tee_adb_file.write(line.encode('utf-8'))
-        tee_adb_file.write('\n')
-        tee_adb_file.flush()
-    except KeyboardInterrupt:
-      print(RESET + EOL + '\n')
-      print('KeyboardInterrupt')
-      break
-    if len(line) == 0:
-      break
+    while (args.terminal_width_for_pipe_mode is -1 and adb.poll() is None) or args.terminal_width_for_pipe_mode is not -1:
+        try:
+            line = input_src.readline().decode('utf-8', 'replace').strip()
+            if tee_adb_file is not None:
+                tee_adb_file.write(line.encode('utf-8'))
+                tee_adb_file.write('\n')
+                tee_adb_file.flush()
+        except KeyboardInterrupt:
+            print(RESET + EOL + '\n')
+            print('KeyboardInterrupt')
+            break
+        if len(line) == 0:
+            break
 
-    bug_line = BUG_LINE.match(line)
-    if bug_line is not None:
-      continue
+        bug_line = BUG_LINE.match(line)
+        if bug_line is not None:
+            continue
 
-    log_line = LOG_LINE.match(line)
-    if log_line:
-      time, level, tag, owner, message = log_line.groups()
-    else:
-      log_line = LOG_LINE_NO_TIME.match(line)
-      if log_line:
-        level, tag, owner, message = log_line.groups()
-        time = ''
-      else:
-        log_line = LOG_LINE_DEFAULT_FMT.match(line)
+        log_line = LOG_LINE.match(line)
         if log_line:
-          time, owner, level, tag, message = log_line.groups()
+            time, level, tag, owner, message = log_line.groups()
         else:
-          continue
+            log_line = LOG_LINE_NO_TIME.match(line)
+            if log_line:
+                level, tag, owner, message = log_line.groups()
+                time = ''
+            else:
+                log_line = LOG_LINE_DEFAULT_FMT.match(line)
+                if log_line:
+                    time, owner, level, tag, message = log_line.groups()
+                else:
+                    continue
 
-    tag = tag.strip()
-    start = parse_start_proc(line)
-    if start:
-      line_package, target, line_pid, line_uid, line_gids = start
-      if match_packages(line_package):
-        pids.add(line_pid)
+        tag = tag.strip()
+        start = parse_start_proc(line)
+        if start:
+            line_package, target, line_pid, line_uid, line_gids = start
+            if match_packages(line_package):
+                pids.add(line_pid)
 
-        app_pid = line_pid
+                app_pid = line_pid
 
-        linebuf  = '\n'
-        linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
-        linebuf += indent_wrap(' Process %s created for %s\n' % (line_package, target), width, header_size + args.extra_header_width)
-        linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
-        linebuf += ' PID: %s   UID: %s   GIDs: %s' % (line_pid, line_uid, line_gids)
-        linebuf += '\n'
-        output_line(linebuf)
-        last_tag = None # Ensure next log gets a tag printed
+                linebuf  = '\n'
+                linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
+                linebuf += indent_wrap(' Process %s created for %s\n' % (line_package, target), width, header_size + args.extra_header_width)
+                linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
+                linebuf += ' PID: %s   UID: %s   GIDs: %s' % (line_pid, line_uid, line_gids)
+                linebuf += '\n'
+                output_line(linebuf)
+                last_tag = None # Ensure next log gets a tag printed
 
-    dead_pid, dead_pname = parse_death(tag, message)
-    if dead_pid:
-      pids.remove(dead_pid)
-      linebuf  = '\n'
-      linebuf += colorize(' ' * (header_size - 1), bg=RED)
-      linebuf += ' Process %s (PID: %s) ended' % (dead_pname, dead_pid)
-      linebuf += '\n'
-      output_line(linebuf)
-      last_tag = None # Ensure next log gets a tag printed
+        dead_pid, dead_pname = parse_death(tag, message)
+        if dead_pid:
+            pids.remove(dead_pid)
+            linebuf  = '\n'
+            linebuf += colorize(' ' * (header_size - 1), bg=RED)
+            linebuf += ' Process %s (PID: %s) ended' % (dead_pname, dead_pid)
+            linebuf += '\n'
+            output_line(linebuf)
+            last_tag = None # Ensure next log gets a tag printed
 
-    # Make sure the backtrace is printed after a native crash
-    if tag == 'DEBUG':
-      bt_line = BACKTRACE_LINE.match(message.lstrip())
-      if bt_line is not None:
-        message = message.lstrip()
-        owner = app_pid
+        # Make sure the backtrace is printed after a native crash
+        if tag == 'DEBUG':
+            bt_line = BACKTRACE_LINE.match(message.lstrip())
+            if bt_line is not None:
+                message = message.lstrip()
+                owner = app_pid
 
-    if not args.all and owner not in pids:
-      continue
-    if level in LOG_LEVELS_MAP and LOG_LEVELS_MAP[level] < min_level:
-      continue
-    if args.ignored_tag and tag_in_tags_regex(tag, args.ignored_tag):
-      continue
-    if args.tag and not tag_in_tags_regex(tag, args.tag):
-      continue
+        if not args.all and owner not in pids:
+            continue
+        if level in LOG_LEVELS_MAP and LOG_LEVELS_MAP[level] < min_level:
+            continue
+        if args.ignored_tag and tag_in_tags_regex(tag, args.ignored_tag):
+            continue
+        if args.tag and not tag_in_tags_regex(tag, args.tag):
+            continue
 
-    linebuf = ''
+        linebuf = ''
 
-    if args.tag_width > 0:
-      # right-align tag title and allocate color if needed
-      if tag != last_tag or args.always_tags:
-        last_tag = tag
-        color = allocate_color(tag)
-        tag = tag[-args.tag_width:].rjust(args.tag_width)
-        linebuf += colorize(tag, fg=color)
-      else:
-        linebuf += ' ' * args.tag_width
-      linebuf += ' '
+        if args.tag_width > 0:
+            # right-align tag title and allocate color if needed
+            if tag != last_tag or args.always_tags:
+                last_tag = tag
+                color = allocate_color(tag)
+                tag = tag[-args.tag_width:].rjust(args.tag_width)
+                linebuf += colorize(tag, fg=color)
+            else:
+                linebuf += ' ' * args.tag_width
+            linebuf += ' '
 
-    # write out level colored edge
-    if level in TAGTYPES:
-      linebuf += TAGTYPES[level]
-    else:
-      linebuf += ' ' + level + ' '
-    linebuf += ' '
-
-    if args.keep_errors and (level == 'F' or level == 'E'):
-      keep_line_on_stdout = True
-    elif args.addr2line_tool and args.addr2line_bin and NATIVE_CRASH_LINE.match(message):
-      keep_line_on_stdout = True
-    else:
-      keep_line_on_stdout = False
-
-      matches_grep = does_match_grep(message, grep_words_with_color, False)
-      matches_igrep = does_match_grep(message, igrep_words_with_color, True)
-      machtes_rgrep = does_match_regex_grep(message, rgrep_words_with_color)
-
-      matches_grepv = does_match_grepv(message, excluded_words, False)
-      matches_igrepv = does_match_grepv(message, iexcluded_words, True)
-      machtes_rgrepv = does_match_regex_grepv(message, rexcluded_words)
-
-      if matches_grep or matches_igrep or machtes_rgrep:
-        keep_line_on_stdout = True
-      elif matches_grepv or matches_igrepv or machtes_rgrepv:
-        keep_line_on_stdout = False
-      else:
-        if empty(grep_words_with_color) and empty(igrep_words_with_color) and empty(rgrep_words_with_color):
-          keep_line_on_stdout = True
+        # write out level colored edge
+        if level in TAGTYPES:
+            linebuf += TAGTYPES[level]
         else:
-          keep_line_on_stdout = False
+            linebuf += ' ' + level + ' '
+        linebuf += ' '
 
-    # format tag message using rules
-    for matcher in RULES:
-      replace = RULES[matcher]
-      message = matcher.sub(replace, message)
+        if args.keep_errors and (level == 'F' or level == 'E'):
+            keep_line_on_stdout = True
+        elif args.addr2line_tool and args.addr2line_bin and NATIVE_CRASH_LINE.match(message):
+            keep_line_on_stdout = True
+        else:
+            keep_line_on_stdout = False
 
-    addr2line_lines = []
-    if (level == 'F' or level == 'E') and args.addr2line_tool and args.addr2line_bin:
-      for i in range(0, len(message)):
-        matches_native_crash = NATIVE_CRASH_LINE.match(message[i:])
-        if matches_native_crash:
-          crash_addr, crash_dir, crash_file_name, crash_ext_name = matches_native_crash.groups()
-          if crash_ext_name is not None:
-            crash_ext_name = crash_ext_name.split()[0]
-          tool = args.addr2line_tool
-          for lib_path in args.addr2line_bin:
-            matches_lib_path = FILE_PATH.match(lib_path)
-            if matches_lib_path:
-              lib_dir, lib_file_name, lib_ext_name = matches_lib_path.groups()
-              if crash_file_name == lib_file_name and crash_ext_name == lib_ext_name:
-                command = tool + ' -C -f -e ' + lib_path + ' ' + crash_addr
-                addr2line_res = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
-                lines = addr2line_res.split('\n')
-                for line in lines:
-                  line = colorize(line, fg=BLACK, bg=GREEN, bold=True)
-                  line = add_timestap_header(time, line)
-                  line = linebuf + line
-                  addr2line_lines.append(line)
-                break
-          break
+            matches_grep = does_match_grep(message, grep_words_with_color, False)
+            matches_igrep = does_match_grep(message, igrep_words_with_color, True)
+            machtes_rgrep = does_match_regex_grep(message, rgrep_words_with_color)
 
-    words_to_color = grep_words_with_color + highlight_words_with_color
-    iwords_to_color = igrep_words_with_color + ihighlight_words_with_color
-    rwords_to_color = rgrep_words_with_color + rhighlight_words_with_color
+            matches_grepv = does_match_grepv(message, excluded_words, False)
+            matches_igrepv = does_match_grepv(message, iexcluded_words, True)
+            machtes_rgrepv = does_match_regex_grepv(message, rexcluded_words)
 
-    message = highlight(message, words_to_color, ignore_case=False)
-    message = highlight(message, iwords_to_color, ignore_case=True)
-    message = highlight(message, rwords_to_color, is_regex=True)
+            if matches_grep or matches_igrep or machtes_rgrep:
+                keep_line_on_stdout = True
+            elif matches_grepv or matches_igrepv or machtes_rgrepv:
+                keep_line_on_stdout = False
+            else:
+                if empty(grep_words_with_color) and empty(igrep_words_with_color) and empty(rgrep_words_with_color):
+                    keep_line_on_stdout = True
+                else:
+                    keep_line_on_stdout = False
 
-    message = add_timestap_header(time, message)
+        # format tag message using rules
+        for matcher in RULES:
+            replace = RULES[matcher]
+            message = matcher.sub(replace, message)
 
-    lines = split_to_lines(message, width, header_size, header_size + args.extra_header_width)
+        addr2line_lines = []
+        if (level == 'F' or level == 'E') and args.addr2line_tool and args.addr2line_bin:
+            for i in range(0, len(message)):
+                matches_native_crash = NATIVE_CRASH_LINE.match(message[i:])
+                if matches_native_crash:
+                    crash_addr, crash_dir, crash_file_name, crash_ext_name = matches_native_crash.groups()
+                    if crash_ext_name is not None:
+                        crash_ext_name = crash_ext_name.split()[0]
+                    tool = args.addr2line_tool
+                    for lib_path in args.addr2line_bin:
+                        matches_lib_path = FILE_PATH.match(lib_path)
+                        if matches_lib_path:
+                            lib_dir, lib_file_name, lib_ext_name = matches_lib_path.groups()
+                            if crash_file_name == lib_file_name and crash_ext_name == lib_ext_name:
+                                command = tool + ' -C -f -e ' + lib_path + ' ' + crash_addr
+                                addr2line_res = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
+                                lines = addr2line_res.split('\n')
+                                for line in lines:
+                                    line = colorize(line, fg=BLACK, bg=GREEN, bold=True)
+                                    line = add_timestap_header(time, line)
+                                    line = linebuf + line
+                                    addr2line_lines.append(line)
+                                break
+                    break
 
-    linebuf += ('\n' + ' ' * (header_size + args.extra_header_width)).join(lines)
+        words_to_color = grep_words_with_color + highlight_words_with_color
+        iwords_to_color = igrep_words_with_color + ihighlight_words_with_color
+        rwords_to_color = rgrep_words_with_color + rhighlight_words_with_color
 
-    output_line(linebuf.encode('utf-8'), keep_line_on_stdout)
+        message = highlight(message, words_to_color, ignore_case=False)
+        message = highlight(message, iwords_to_color, ignore_case=True)
+        message = highlight(message, rwords_to_color, is_regex=True)
 
-    if not empty(addr2line_lines):
-      for line in addr2line_lines:
-        if not empty(line):
-          output_line(line.encode('utf-8'), True)
+        message = add_timestap_header(time, message)
+
+        lines = split_to_lines(message, width, header_size, header_size + args.extra_header_width)
+
+        linebuf += ('\n' + ' ' * (header_size + args.extra_header_width)).join(lines)
+
+        output_line(linebuf.encode('utf-8'), keep_line_on_stdout)
+
+        if not empty(addr2line_lines):
+            for line in addr2line_lines:
+                if not empty(line):
+                    output_line(line.encode('utf-8'), True)
 
 except KeyboardInterrupt:
-  print(RESET + EOL + '\n')
-  print('KeyboardInterrupt')
+    print(RESET + EOL + '\n')
+    print('KeyboardInterrupt')

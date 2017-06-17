@@ -192,11 +192,14 @@ color_dict = {'BLACK': BLACK, 'RED': RED, 'GREEN': GREEN, 'YELLOW': YELLOW,
 contrast_color_dict = {BLACK: WHITE, RED: WHITE, GREEN: BLACK, YELLOW: BLACK,
                        BLUE: WHITE, MAGENTA: WHITE, CYAN: BLACK, WHITE: BLACK}
 
+
 def empty(vector):
     return vector is None or len(vector) <= 0
 
+
 RESET = '\033[0m'
 EOL = '\033[K'
+
 
 def termcolor(fg=None, bg=None, bold=False, ul=False):
     codes = []
@@ -423,7 +426,6 @@ def highlight(line, words_to_color, ignore_case=False, is_regex=False):
         if len(word) > 0:
             index = 0
             word_len = len(word)
-            i = 0
             while index < len(line):
                 try:
                     if is_regex:

@@ -348,8 +348,8 @@ def hide_header(line, regex_list):
     for regex in regex_list:
         matches = re.match(regex, line)
         if matches:
-            return line[matches.end():], True
-    return line, False
+            return line[matches.end():], matches.groups(), True
+    return line, [], False
 
 
 def output_line(line, keep_line_on_stdout = True):
@@ -359,8 +359,6 @@ def output_line(line, keep_line_on_stdout = True):
         tee_pidcat_file.flush()
 
     if keep_line_on_stdout:
-        if not empty(args.hide_header_regex):
-            line, header_hidden = hide_header(line, args.hide_header_regex)
         print(line)
         sys.stdout.flush()
         if tee_file is not None:
@@ -846,6 +844,11 @@ try:
         words_to_color = grep_words_with_color + highlight_words_with_color
         iwords_to_color = igrep_words_with_color + ihighlight_words_with_color
         rwords_to_color = rgrep_words_with_color + rhighlight_words_with_color
+
+        extracted_header = []
+        if not empty(args.hide_header_regex):
+            message, extracted_header, header_hidden = hide_header(message, args.hide_header_regex)
+        message = ' '.join(extracted_header) + ' ' + message
 
         message = highlight(message, words_to_color, ignore_case=False)
         message = highlight(message, iwords_to_color, ignore_case=True)

@@ -58,7 +58,9 @@ function _pidcat()
   esac
 
   # if we can get the package names, then use those
-  local apks=$(adb $device_selected shell ls /data/data 2>/dev/null | tr '\n' ' ' | tr -d '\r')
+  local apks=$(adb $device_selected shell pm list packages 2>/dev/null \
+                  | cut -d : -f 2 \
+                  | tr -d '\r' )
   COMPREPLY=( $(compgen -W "$apks" -- ${cur}) )
   return 0
 }

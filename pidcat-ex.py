@@ -113,6 +113,10 @@ parser.add_argument('--rgrepv', dest='rgrepv_words', metavar='REGEX_LIST_TO_EXCL
 parser.add_argument('--keep-all-errors', dest='keep_errors', action='store_true',
                     help='Do not filter any error or fatal logs from \'pidcat-ex\' output. This is quite helpful to '
                          'avoid ignoring information about exceptions, crash stacks and assertion failures')
+parser.add_argument('--keep-all-warnings', dest='keep_warnings', action='store_true',
+                    help='Do not filter any warning, error or fatal logs from \'pidcat-ex\' output. '
+                         'This is quite helpful to '
+                         'avoid ignoring information about exceptions, crash stacks and assertion failures')
 parser.add_argument('--tee', dest='file_name', type=str, default='',
                     help='Besides stdout output, also output the filtered result (after grep/grepv) to the file')
 parser.add_argument('--tee-pidcat', dest='pidcat_file_name', type=str, default='',
@@ -169,13 +173,13 @@ PID_LINE = re.compile(r'^\w+\s+(\w+)\s+\w+\s+\w+\s+\w+\s+\w+\s+\w+\s+\w\s([\w|\.
 PID_START = re.compile(r'^.*: Start proc ([a-zA-Z0-9._:]+) for ([a-z]+ [^:]+): pid=(\d+) uid=(\d+) gids=(.*)$')
 PID_START_5_1 = re.compile(r'^.*: Start proc (\d+):([a-zA-Z0-9._:]+)/[a-z0-9]+ for (.*)$')
 PID_START_DALVIK = re.compile(r'^E/dalvikvm\(\s*(\d+)\): >>>>> ([a-zA-Z0-9._:]+) \[ userId:0 \| appId:(\d+) \]$')
-PID_KILL  = re.compile(r'^Killing (\d+):([a-zA-Z0-9._:]+)/[^:]+: (.*)$')
+PID_KILL = re.compile(r'^Killing (\d+):([a-zA-Z0-9._:]+)/[^:]+: (.*)$')
 PID_LEAVE = re.compile(r'^No longer want ([a-zA-Z0-9._:]+) \(pid (\d+)\): .*$')
 PID_DEATH = re.compile(r'^Process ([a-zA-Z0-9._:]+) \(pid (\d+)\) has died.?$')
-LOG_LINE  = re.compile(r'^[0-9-]+ ([0-9:.]+) ([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
+LOG_LINE = re.compile(r'^[0-9-]+ ([0-9:.]+) ([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
 LOG_LINE_NO_TIME = re.compile(r'([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
 LOG_LINE_DEFAULT_FMT = re.compile(r'^[0-9-]+ ([0-9:.]+)\s*([0-9]+)\s*[0-9]+ ([A-Z]) (.+?): (.*?)$')
-BUG_LINE  = re.compile(r'.*nativeGetEnabledTags.*')
+BUG_LINE = re.compile(r'.*nativeGetEnabledTags.*')
 BACKTRACE_LINE = re.compile(r'^#(.*?)pc\s(.*?)$')
 NATIVE_CRASH_LINE = re.compile(r'#[0-9]{2}[\s]+pc[\s]+([0-9a-zA-Z]+)[\s]+(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))')
 FILE_PATH = re.compile(r'^(.*/)?(?:$|(.+?)(?:(\.[^.]*$)|$))')
@@ -787,6 +791,8 @@ try:
         linebuf += ' '
 
         if args.keep_errors and (level == 'F' or level == 'E'):
+            keep_line_on_stdout = True
+        elif args.keep_warnings and (level == 'F' or level == 'E' or level == 'W'):
             keep_line_on_stdout = True
         elif args.addr2line_tool and args.addr2line_bin and NATIVE_CRASH_LINE.match(message):
             keep_line_on_stdout = True

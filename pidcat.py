@@ -140,6 +140,14 @@ def allocate_color(tag):
   return color
 
 
+# level, tag, owner, message
+FILTERS = [
+  { "tag": re.compile(r'SPREN') },
+  { "tag": re.compile(r'PRINGLES') },
+  { "tag": re.compile(r'Ring') },
+  { "tag": re.compile(r'Media') },
+]
+
 RULES = {
   # StrictMode policy violation; ~duration=319 ms: android.os.StrictMode$StrictModeDiskWriteViolation: policy=31 violation=1
   re.compile(r'^(StrictMode policy violation)(; ~duration=)(\d+ ms)')
@@ -329,6 +337,17 @@ while adb.poll() is None:
   if args.ignored_tag and tag_in_tags_regex(tag, args.ignored_tag):
     continue
   if args.tag and not tag_in_tags_regex(tag, args.tag):
+    continue
+
+  ignore = True
+  for filter in FILTERS:
+    if (("level" not in filter or filter["level"].search(level))
+        and ("tag" not in filter  or filter["tag"].search(tag))
+        and ("owner" not in filter or filter["owner"].search(owner))
+        and ("message" not in filter or filter["message"].search(message))):
+      ignore = False
+
+  if ignore:
     continue
 
   linebuf = ''

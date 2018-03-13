@@ -1,3 +1,5 @@
+Forked from https://github.com/JakeWharton/pidcat
+
 PID Cat
 =======
 
@@ -15,29 +17,18 @@ convenient development process.
     pidcat com.oprah.bees.android
 
 
-Here is an example of the output when running for the Google Plus app:
+Original Pidcat example:
 
-![Example screen](screen.png)
+![Old Screen](old_screen.png)
 
+How Pidcat looks in this fork:
+
+![New Screen](new_screen.png)
 
 Install
 -------
 
-Get the script:
-
- *  OS X: Use [Homebrew][2].
-
-         brew install pidcat
-
-    If you need to install the latest development version
-
-        brew unlink pidcat  
-        brew install --HEAD pidcat
-  
- * Arch Linux : Install the package called `pidcat-git` from the [AUR][4].
- 
- * Others: Download the `pidcat.py` and place it on your PATH.
-
+Download the `pidcat.py` and place it on your PATH.
 
 Make sure that `adb` from the [Android SDK][3] is on your PATH. This script will
 not work unless this is that case. That means, when you type `adb` and press

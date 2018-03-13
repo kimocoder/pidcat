@@ -29,6 +29,8 @@ from subprocess import PIPE
 
 __version__ = '2.1.0'
 
+INDENT_SIZE = 4
+
 LOG_LEVELS = 'VDIWEF'
 LOG_LEVELS_MAP = dict([(LOG_LEVELS[i], i) for i in range(len(LOG_LEVELS))])
 parser = argparse.ArgumentParser(description='Filter logcat by package name')
@@ -36,7 +38,7 @@ parser.add_argument('package', nargs='*', help='Application package name(s)')
 parser.add_argument('-w', '--tag-width', metavar='N', dest='tag_width', type=int, default=23, help='Width of log tag')
 parser.add_argument('-l', '--min-level', dest='min_level', type=str, choices=LOG_LEVELS+LOG_LEVELS.lower(), default='V', help='Minimum level to be displayed')
 parser.add_argument('--color-gc', dest='color_gc', action='store_true', help='Color garbage collection')
-parser.add_argument('--always-display-tags', dest='always_tags', action='store_true',help='Always display the tag name')
+parser.add_argument('--always-display-tags', dest='always_tags', action='store_true', help='Always display the tag name')
 parser.add_argument('--current', dest='current_app', action='store_true',help='Filter logcat by current running app')
 parser.add_argument('-s', '--serial', dest='device_serial', help='Device serial number (adb -s option)')
 parser.add_argument('-d', '--device', dest='use_device', action='store_true', help='Use first device for log input (adb -d option)')
@@ -44,6 +46,7 @@ parser.add_argument('-e', '--emulator', dest='use_emulator', action='store_true'
 parser.add_argument('-c', '--clear', dest='clear_logcat', action='store_true', help='Clear the entire log before running')
 parser.add_argument('-t', '--tag', dest='tag', action='append', help='Filter output by specified tag(s)')
 parser.add_argument('-i', '--ignore-tag', dest='ignored_tag', action='append', help='Filter output by ignoring specified tag(s)')
+parser.add_argument('--time', dest='time', action='store_true', default=True, help='Print time')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print the version number and exit')
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
 
@@ -103,7 +106,7 @@ def indent_wrap(message):
   if width == -1:
     return message
   message = message.replace('\t', '    ')
-  wrap_area = width - header_size
+  wrap_area = width - INDENT_SIZE
   messagebuf = ''
   current = 0
   while current < len(message):
@@ -111,7 +114,7 @@ def indent_wrap(message):
     messagebuf += message[current:next]
     if next < len(message):
       messagebuf += '\n'
-      messagebuf += ' ' * header_size
+      messagebuf += ' ' * INDENT_SIZE
     current = next
   return messagebuf
 
@@ -164,20 +167,22 @@ TAGTYPES = {
   'F': colorize(' F ', fg=BLACK, bg=RED),
 }
 
-PID_LINE = re.compile(r'^\w+\s+(\w+)\s+\w+\s+\w+\s+\w+\s+\w+\s+\w+\s+\w\s([\w|\.|\/]+)$')
-PID_START = re.compile(r'^.*: Start proc ([a-zA-Z0-9._:]+) for ([a-z]+ [^:]+): pid=(\d+) uid=(\d+) gids=(.*)$')
-PID_START_5_1 = re.compile(r'^.*: Start proc (\d+):([a-zA-Z0-9._:]+)/[a-z0-9]+ for (.*)$')
-PID_START_DALVIK = re.compile(r'^E/dalvikvm\(\s*(\d+)\): >>>>> ([a-zA-Z0-9._:]+) \[ userId:0 \| appId:(\d+) \]$')
-PID_KILL  = re.compile(r'^Killing (\d+):([a-zA-Z0-9._:]+)/[^:]+: (.*)$')
-PID_LEAVE = re.compile(r'^No longer want ([a-zA-Z0-9._:]+) \(pid (\d+)\): .*$')
-PID_DEATH = re.compile(r'^Process ([a-zA-Z0-9._:]+) \(pid (\d+)\) has died.?$')
-LOG_LINE  = re.compile(r'^([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
-BUG_LINE  = re.compile(r'.*nativeGetEnabledTags.*')
-BACKTRACE_LINE = re.compile(r'^#(.*?)pc\s(.*?)$')
+TIME_FORMAT = r'^(\d+-\d+\s+\d+:\d+:\d+\.\d+\s+)?'
+PID_LINE = re.compile(TIME_FORMAT+r'\w+\s+(\w+)\s+\w+\s+\w+\s+\w+\s+\w+\s+\w+\s+\w\s([\w|\.|\/]+)$')
+PID_START = re.compile(TIME_FORMAT+r'.*: Start proc ([a-zA-Z0-9._:]+) for ([a-z]+ [^:]+): pid=(\d+) uid=(\d+) gids=(.*)$')
+PID_START_5_1 = re.compile(TIME_FORMAT+r'.*: Start proc (\d+):([a-zA-Z0-9._:]+)/[a-z0-9]+ for (.*)$')
+PID_START_DALVIK = re.compile(TIME_FORMAT+r'E/dalvikvm\(\s*(\d+)\): >>>>> ([a-zA-Z0-9._:]+) \[ userId:0 \| appId:(\d+) \]$')
+PID_KILL  = re.compile(TIME_FORMAT+r'Killing (\d+):([a-zA-Z0-9._:]+)/[^:]+: (.*)$')
+PID_LEAVE = re.compile(TIME_FORMAT+r'No longer want ([a-zA-Z0-9._:]+) \(pid (\d+)\): .*$')
+PID_DEATH = re.compile(TIME_FORMAT+r'Process ([a-zA-Z0-9._:]+) \(pid (\d+)\) has died.?$')
+LOG_LINE  = re.compile(TIME_FORMAT+r'([A-Z])/(.+?)\( *(\d+)\): (.*?)$')
+BUG_LINE  = re.compile(TIME_FORMAT+r'.*nativeGetEnabledTags.*')
+BACKTRACE_LINE = re.compile(TIME_FORMAT+r'#(.*?)pc\s(.*?)$')
 
 adb_command = base_adb_command[:]
 adb_command.append('logcat')
-adb_command.extend(['-v', 'brief'])
+# Make Logcat print time in log entries
+adb_command.extend(['-v', 'time'])
 
 # Clear log before starting logcat
 if args.clear_logcat:
@@ -216,20 +221,20 @@ def parse_death(tag, message):
     return None, None
   kill = PID_KILL.match(message)
   if kill:
-    pid = kill.group(1)
-    package_line = kill.group(2)
+    pid = kill.group(2)
+    package_line = kill.group(3)
     if match_packages(package_line) and pid in pids:
       return pid, package_line
   leave = PID_LEAVE.match(message)
   if leave:
-    pid = leave.group(2)
-    package_line = leave.group(1)
+    pid = leave.group(3)
+    package_line = leave.group(2)
     if match_packages(package_line) and pid in pids:
       return pid, package_line
   death = PID_DEATH.match(message)
   if death:
-    pid = death.group(2)
-    package_line = death.group(1)
+    pid = death.group(3)
+    package_line = death.group(2)
     if match_packages(package_line) and pid in pids:
       return pid, package_line
   return None, None
@@ -237,19 +242,19 @@ def parse_death(tag, message):
 def parse_start_proc(line):
   start = PID_START_5_1.match(line)
   if start is not None:
-    line_pid, line_package, target = start.groups()
+    line_time, line_pid, line_package, target = start.groups()
     return line_package, target, line_pid, '', ''
   start = PID_START.match(line)
   if start is not None:
-    line_package, target, line_pid, line_uid, line_gids = start.groups()
+    line_time, line_package, target, line_pid, line_uid, line_gids = start.groups()
     return line_package, target, line_pid, line_uid, line_gids
   start = PID_START_DALVIK.match(line)
   if start is not None:
-    line_pid, line_package, line_uid = start.groups()
+    line_time, line_pid, line_package, line_uid = start.groups()
     return line_package, '', line_pid, line_uid, ''
   return None
 
-def tag_in_tags_regex(tag, tags):  
+def tag_in_tags_regex(tag, tags):
   return any(re.match(r'^' + t + r'$', tag) for t in map(str.strip, tags))
 
 ps_command = base_adb_command + ['shell', 'ps']
@@ -264,8 +269,8 @@ while True:
 
   pid_match = PID_LINE.match(line)
   if pid_match is not None:
-    pid = pid_match.group(1)
-    proc = pid_match.group(2)
+    pid = pid_match.group(2)
+    proc = pid_match.group(3)
     if proc in catchall_package:
       seen_pids = True
       pids.add(pid)
@@ -286,7 +291,7 @@ while adb.poll() is None:
   if log_line is None:
     continue
 
-  level, tag, owner, message = log_line.groups()
+  line_time, level, tag, owner, message = log_line.groups()
   tag = tag.strip()
   start = parse_start_proc(line)
   if start:
@@ -297,6 +302,7 @@ while adb.poll() is None:
       app_pid = line_pid
 
       linebuf  = '\n'
+      linebuf += line_time if args.time and line_time != None else ''
       linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
       linebuf += indent_wrap(' Process %s created for %s\n' % (line_package, target))
       linebuf += colorize(' ' * (header_size - 1), bg=WHITE)
@@ -309,6 +315,7 @@ while adb.poll() is None:
   if dead_pid:
     pids.remove(dead_pid)
     linebuf  = '\n'
+    linebuf = line_time if args.time and line_time != None else ''
     linebuf += colorize(' ' * (header_size - 1), bg=RED)
     linebuf += ' Process %s (PID: %s) ended' % (dead_pname, dead_pid)
     linebuf += '\n'
@@ -333,23 +340,21 @@ while adb.poll() is None:
 
   linebuf = ''
 
-  if args.tag_width > 0:
-    # right-align tag title and allocate color if needed
-    if tag != last_tag or args.always_tags:
-      last_tag = tag
-      color = allocate_color(tag)
-      tag = tag[-args.tag_width:].rjust(args.tag_width)
-      linebuf += colorize(tag, fg=color)
+  if args.tag_width > 0 and (tag != last_tag or args.always_tags):
+    linebuf = line_time if args.time and line_time != None else ''
+    # write out level colored edge
+    if level in TAGTYPES:
+      linebuf += TAGTYPES[level]
     else:
-      linebuf += ' ' * args.tag_width
+      linebuf += level
     linebuf += ' '
+    last_tag = tag
+    color = allocate_color(tag)
+    tag = tag[-args.tag_width:]
+    linebuf += colorize(tag, fg=color)
+    linebuf += '\n'
+  linebuf += ' ' * INDENT_SIZE
 
-  # write out level colored edge
-  if level in TAGTYPES:
-    linebuf += TAGTYPES[level]
-  else:
-    linebuf += ' ' + level + ' '
-  linebuf += ' '
 
   # format tag message using rules
   for matcher in RULES:

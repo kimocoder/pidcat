@@ -28,7 +28,7 @@
 # Description
 # -----------
 #
-#  Completion script for pidcat 
+#  Completion script for pidcat
 #  (https://github.com/JakeWharton/pidcat/)
 #
 # ------------------------------------------------------------------------------
@@ -60,6 +60,7 @@ _pidcat() {
     '--color-gc[Color garbage collection]' \
     '--always-display-tags[Always display the tag name]' \
     '--current[Filter logcat by current running app]' \
+    '--time[Print time]' \
     '*:: :_pidcat_processes' \
   && ret=0
 

@@ -19,6 +19,8 @@
 # Piping detection and popen() added by other Android team members
 # Package filtering and output improvements by Jake Wharton, http://jakewharton.com
 
+# Extended by Meng Zhang in WhatsApp VOIP team
+
 import argparse
 import sys
 import re
@@ -55,7 +57,7 @@ parser.add_argument('-i', '--ignore-tag', dest='ignored_tag', action='append',
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__,
                     help='Print the version number and exit')
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
-parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', default=False,
+parser.add_argument('--timestamp', dest='add_timestamp', action='store_true', default=True,
                     help='Prepend each line of output with the current time.')
 parser.add_argument('--extra-header-width', metavar='N', dest='extra_header_width', type=int, default=0,
                     help='Width of customized log header. If you have your own header besides Android log header, '
@@ -313,9 +315,9 @@ if len(package) == 0:
     args.all = True
 
 # Store the names of packages for which to match all processes.
-catchall_package = filter(lambda package: package.find(":") == -1, package)
+catchall_package = list(filter(lambda package: package.find(":") == -1, package))
 # Store the name of processes to match exactly.
-named_processes = filter(lambda package: package.find(":") != -1, package)
+named_processes = list(filter(lambda package: package.find(":") != -1, package))
 # Convert default process names from <package>: (cli notation) to <package>
 # (android notation) in the exact names match group.
 named_processes = map(lambda package:
@@ -346,7 +348,7 @@ if not empty(args.pidcat_file_name):
 
 tee_adb_file = None
 if not empty(args.adb_output_file_name):
-    tee_adb_file = open(args.adb_output_file_name, 'w')
+    tee_adb_file = open(args.adb_output_file_name, 'wb')
 
 
 def hide_header(line, regex_list):
@@ -707,7 +709,7 @@ try:
             line = input_src.readline().decode('utf-8', 'replace').strip()
             if tee_adb_file is not None:
                 tee_adb_file.write(line.encode('utf-8'))
-                tee_adb_file.write('\n')
+                tee_adb_file.write('\n'.encode('utf-8'))
                 tee_adb_file.flush()
         except KeyboardInterrupt:
             print(RESET + EOL + '\n')
@@ -846,10 +848,9 @@ try:
                             lib_dir, lib_file_name, lib_ext_name = matches_lib_path.groups()
                             if crash_file_name == lib_file_name and crash_ext_name == lib_ext_name:
                                 command = tool + ' -C -f -e ' + lib_path + ' ' + crash_addr
-                                print(command)
                                 addr2line_res = subprocess.Popen(command, shell=True,
                                                                  stdout=subprocess.PIPE).stdout.read()
-                                lines = addr2line_res.split('\n')
+                                lines = addr2line_res.decode("utf-8").split('\n')
                                 for line in lines:
                                     line = colorize(line, fg=BLACK, bg=GREEN, bold=True)
                                     line = add_timestap_header(time, line)
@@ -877,12 +878,12 @@ try:
 
         linebuf += ('\n' + ' ' * (header_size + args.extra_header_width)).join(lines)
 
-        output_line(linebuf.encode('utf-8'), keep_line_on_stdout)
+        output_line(linebuf, keep_line_on_stdout)
 
         if not empty(addr2line_lines):
             for line in addr2line_lines:
                 if not empty(line):
-                    output_line(line.encode('utf-8'), True)
+                    output_line(line, True)
 
 except KeyboardInterrupt:
     print(RESET + EOL + '\n')

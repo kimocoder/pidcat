@@ -1,20 +1,18 @@
 #!/usr/bin/python -u
 
-'''
-Copyright 2009, The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-'''
+# Copyright 2009, The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # Script to highlight adb logcat output for console
 # Originally written by Jeff Sharkey, http://jsharkey.org/
@@ -145,8 +143,9 @@ parser.add_argument('--hide-header', dest='hide_header_regex', action='append',
                          'multiple \'--hide-header\' options and if the header matches any of them, it will be '
                          'removed from output')
 parser.add_argument('--addr2line-tool', type=str, dest='addr2line_tool',
-                    metavar=('ADDR2LINE_TOOL_PATH'),
-                    help='This option along with \'--addr2line-bin\' (you have to give values to both these parameters) '
+                    metavar='ADDR2LINE_TOOL_PATH',
+                    help='This option along with \'--addr2line-bin\' '
+                         '(you have to give values to both these parameters) '
                          'will help you automatically '
                          'symbolicate the native crash addresses found in the log that match your '
                          'native code binary file with debug information, such as '
@@ -154,7 +153,7 @@ parser.add_argument('--addr2line-tool', type=str, dest='addr2line_tool',
                          'the \'xxx-addr2line\', which should be found in your Android SDK directory. ')
 
 parser.add_argument('--addr2line-bin', type=str, dest='addr2line_bin',
-                    metavar=('NATIVE_DEBUG_BIN_FILE_PATH'), action='append',
+                    metavar='NATIVE_DEBUG_BIN_FILE_PATH', action='append',
                     help='This option along with `--addr2line-tool` (you have to give values to both these parameters) '
                          'will help you automatically '
                          'symbolicate the native crash addresses found in the log that match your '
@@ -169,7 +168,7 @@ parser.add_argument('--addr2line-bin', type=str, dest='addr2line_bin',
                          'would not be correct')
 
 
-PID_LINE = re.compile(r'^\w+\s+(\w+)\s+\w+\s+\w+\s+\w+\s+\w+\s+\w+\s+\w\s([\w|\.|\/]+)$')
+PID_LINE = re.compile(r'^\w+\s+(\w+)\s+\w+\s+\w+\s+\w+\s+\w+\s+\w+\s+\w\s([\w|./]+)$')
 PID_START = re.compile(r'^.*: Start proc ([a-zA-Z0-9._:]+) for ([a-z]+ [^:]+): pid=(\d+) uid=(\d+) gids=(.*)$')
 PID_START_5_1 = re.compile(r'^.*: Start proc (\d+):([a-zA-Z0-9._:]+)/[a-z0-9]+ for (.*)$')
 PID_START_DALVIK = re.compile(r'^E/dalvikvm\(\s*(\d+)\): >>>>> ([a-zA-Z0-9._:]+) \[ userId:0 \| appId:(\d+) \]$')
@@ -317,8 +316,10 @@ if len(package) == 0:
 catchall_package = filter(lambda package: package.find(":") == -1, package)
 # Store the name of processes to match exactly.
 named_processes = filter(lambda package: package.find(":") != -1, package)
-# Convert default process names from <package>: (cli notation) to <package> (android notation) in the exact names match group.
-named_processes = map(lambda package: package if package.find(":") != len(package) - 1 else package[:-1], named_processes)
+# Convert default process names from <package>: (cli notation) to <package>
+# (android notation) in the exact names match group.
+named_processes = map(lambda package:
+                      package if package.find(":") != len(package) - 1 else package[:-1], named_processes)
 
 header_size = args.tag_width + 1 + 3 + 1  # space, level, space
 
@@ -374,7 +375,8 @@ def output_line(line, keep_line_on_stdout = True):
 def does_match_grep(message, grep_words_with_color, ignore_case):
     if not empty(grep_words_with_color):
         for word, c, bg in grep_words_with_color:
-            if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
+            if len(word) > 0 and ((not ignore_case and word in message) or
+                                  (ignore_case and word.upper() in message.upper())):
                 return True
     return False
 
@@ -390,7 +392,8 @@ def does_match_regex_grep(message, regex_grep_words_with_color):
 def does_match_grepv(message, grepv_words, ignore_case):
     if not empty(grepv_words):
         for word, c, bg in grepv_words:
-            if len(word) > 0 and ((not ignore_case and word in message) or (ignore_case and word.upper() in message.upper())):
+            if len(word) > 0 and ((not ignore_case and word in message) or
+                                  (ignore_case and word.upper() in message.upper())):
                 return True
     return False
 
@@ -556,7 +559,8 @@ def allocate_color(tag):
 
 
 RULES = {
-    # StrictMode policy violation; ~duration=319 ms: android.os.StrictMode$StrictModeDiskWriteViolation: policy=31 violation=1
+    # StrictMode policy violation; ~duration=319 ms:
+    # android.os.StrictMode$StrictModeDiskWriteViolation: policy=31 violation=1
     re.compile(r'^(StrictMode policy violation)(; ~duration=)(\d+ ms)')
     : r'%s\1%s\2%s\3%s' % (termcolor(RED), RESET, termcolor(YELLOW), RESET),
 }
@@ -564,7 +568,8 @@ RULES = {
 # Only enable GC coloring if the user opted-in
 if args.color_gc:
     # GC_CONCURRENT freed 3617K, 29% free 20525K/28648K, paused 4ms+5ms, total 85ms
-    key = re.compile(r'^(GC_(?:CONCURRENT|FOR_M?ALLOC|EXTERNAL_ALLOC|EXPLICIT) )(freed <?\d+.)(, \d+\% free \d+./\d+., )(paused \d+ms(?:\+\d+ms)?)')
+    key = re.compile(r'^(GC_(?:CONCURRENT|FOR_M?ALLOC|EXTERNAL_ALLOC|EXPLICIT) )'
+                     r'(freed <?\d+.)(, \d+% free \d+./\d+., )(paused \d+ms(?:\+\d+ms)?)')
     val = r'\1%s\2%s\3%s\4%s' % (termcolor(GREEN), RESET, termcolor(YELLOW), RESET)
 
     RULES[key] = val
@@ -592,12 +597,15 @@ if args.clear_logcat:
     while adb_clear.poll() is None:
         pass
 
+
 # This is a ducktype of the subprocess.Popen object
 class FakeStdinProcess():
     def __init__(self):
         self.stdout = sys.stdin
+
     def poll(self):
         return None
+
 
 if sys.stdin.isatty():
     adb = subprocess.Popen(adb_command, stdin=PIPE, stdout=PIPE)
@@ -659,6 +667,7 @@ def parse_start_proc(line):
 
 def tag_in_tags_regex(tag, tags):
     return any(re.match(r'^' + t + r'$', tag) for t in map(str.strip, tags))
+
 
 ps_command = base_adb_command + ['shell', 'ps']
 ps_pid = subprocess.Popen(ps_command, stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -837,7 +846,9 @@ try:
                             lib_dir, lib_file_name, lib_ext_name = matches_lib_path.groups()
                             if crash_file_name == lib_file_name and crash_ext_name == lib_ext_name:
                                 command = tool + ' -C -f -e ' + lib_path + ' ' + crash_addr
-                                addr2line_res = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).stdout.read()
+                                print(command)
+                                addr2line_res = subprocess.Popen(command, shell=True,
+                                                                 stdout=subprocess.PIPE).stdout.read()
                                 lines = addr2line_res.split('\n')
                                 for line in lines:
                                     line = colorize(line, fg=BLACK, bg=GREEN, bold=True)

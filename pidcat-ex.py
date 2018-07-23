@@ -19,8 +19,6 @@
 # Piping detection and popen() added by other Android team members
 # Package filtering and output improvements by Jake Wharton, http://jakewharton.com
 
-# Extended by Meng Zhang in WhatsApp VOIP team
-
 import argparse
 import sys
 import re

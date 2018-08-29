@@ -24,6 +24,7 @@ limitations under the License.
 import argparse
 import sys
 import re
+import importlib
 import subprocess
 from subprocess import PIPE
 
@@ -46,6 +47,8 @@ parser.add_argument('-t', '--tag', dest='tag', action='append', help='Filter out
 parser.add_argument('-i', '--ignore-tag', dest='ignored_tag', action='append', help='Filter output by ignoring specified tag(s)')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print the version number and exit')
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
+parser.add_argument('-m', '--modules', dest='modules', metavar='MODULE', nargs='*', default=["default"], help='Modules name to format or filter the log.')
+
 
 args = parser.parse_args()
 min_level = LOG_LEVELS_MAP[args.min_level.upper()]
@@ -115,6 +118,34 @@ def indent_wrap(message):
     current = next
   return messagebuf
 
+def load_module(module_name):
+  try:
+    module = importlib.import_module(module_name)
+    if 'get_filters' in dir(module):
+      return module
+    else:
+      return None
+  except ImportError:
+    return None
+
+MODULES = []
+print("loading modules: ")
+for mod_name in args.modules:
+  mod = load_module(mod_name)
+  if mod:
+    MODULES.append(mod)
+    print("  [{0}] {1}".format(colorize(' OK ', fg=GREEN), mod_name))
+  else:
+    print("  [{0}] {1}".format(colorize('FAIL', fg=RED), mod_name))
+    sys.exit(1)
+print("\n")
+
+# level, tag, owner, message
+FILTERS = []
+
+for mod in MODULES:
+  FILTERS.extend(mod.get_filters())
+
 
 LAST_USED = [RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN]
 KNOWN_TAGS = {
@@ -138,15 +169,6 @@ def allocate_color(tag):
     LAST_USED.remove(color)
     LAST_USED.append(color)
   return color
-
-
-# level, tag, owner, message
-FILTERS = [
-  { "tag": re.compile(r'SPREN') },
-  { "tag": re.compile(r'PRINGLES') },
-  { "tag": re.compile(r'Ring') },
-  { "tag": re.compile(r'Media') },
-]
 
 RULES = {
   # StrictMode policy violation; ~duration=319 ms: android.os.StrictMode$StrictModeDiskWriteViolation: policy=31 violation=1
@@ -339,15 +361,16 @@ while adb.poll() is None:
   if args.tag and not tag_in_tags_regex(tag, args.tag):
     continue
 
-  ignore = True
-  for filter in FILTERS:
-    if (("level" not in filter or filter["level"].search(level))
-        and ("tag" not in filter  or filter["tag"].search(tag))
-        and ("owner" not in filter or filter["owner"].search(owner))
-        and ("message" not in filter or filter["message"].search(message))):
-      ignore = False
+  showIt = False
+  for fil in FILTERS:
+    if     (('level'   not in fil or fil['level'  ].search(level))
+        and ('tag'     not in fil or fil['tag'    ].search(tag))
+        and ('owner'   not in fil or fil['owner'  ].search(tag))
+        and ('message' not in fil or fil['message'].search(message))):
+      showIt = True
+      break
 
-  if ignore:
+  if not showIt:
     continue
 
   linebuf = ''

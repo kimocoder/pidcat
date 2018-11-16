@@ -108,8 +108,8 @@ _pidcat_serial_numbers() {
 (( $+functions[_pidcat_processes] )) ||
 _pidcat_processes() {
   get_device_from_cmd
-  local proclist; proclist=(${${${(ps:\r:)"$(_call_program proclist adb $device shell ps 2>/dev/null)"}##*\ [S|D|R]\ }:#USER\ *})
-  _multi_parts "$@" / proclist
+  local proclist; proclist=($(adb $device shell pm list packages 2>/dev/null | cut -d ':' -f 2 | tr '\n' ' '))
+  _values 'packages' $proclist
 }
 
 (( $+functions[_pidcat_tags] )) ||

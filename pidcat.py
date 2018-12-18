@@ -134,6 +134,7 @@ for mod_name in args.modules:
   mod = load_module(mod_name)
   if mod:
     MODULES.append(mod)
+    mod.on_create()
     print("  [{0}] {1}".format(colorize(' OK ', fg=GREEN), mod_name))
   else:
     print("  [{0}] {1}".format(colorize('FAIL', fg=RED), mod_name))

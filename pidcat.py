@@ -319,6 +319,13 @@ while adb.poll() is None:
 
   level, tag, owner, message = log_line.groups()
   tag = tag.strip()
+
+  # print formatted from modules
+  for module in MODULES:
+    formatted_msg = module.format_new_entry(level, tag, owner, message)
+    if formatted_msg:
+      print(formatted_msg)
+
   start = parse_start_proc(line)
   if start:
     line_package, target, line_pid, line_uid, line_gids = start

@@ -11,15 +11,14 @@ Basic usage:
 On top of the original [pidcat][1], this fork provides these additional features
  * `--timestamp`: add timestamp at the front of each line
  * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines with
-                        specified color for each key word.
-                        These options particularly consider the
-                        line cutting issue in `pidcat`.
-                        This script will grep lines before `pidcat`
-                        cuts the original `adb` output line so as to
-                        not miss any lines in grepping. Moreover, you can
-                        specify different colors for each word in these
-                        options, which is very helpful in checking different
-                        word terms in massive log in sophisticated debugging.
+                        specified highlighting color for each key word in the list.
+                        The script filters the lines before they are cut by `pidcat`
+                        from the original lines out put by `adb` tool. 
+                        For example, `--grep="logs|sensor\cyan"`.
+                        Multiple key words should be delimited by `|`.
+                        You can specify different colors for each word in these
+                        options, which tailed the key word after `\`, and this is very helpful in checking different
+                        word terms in massive sophisticated log.
                         The supported color names (case ignored) are
                         `BLACK, RED, GREEN,
                         YELLOW, BLUE, MAGENTA, CYAN,

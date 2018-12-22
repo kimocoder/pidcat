@@ -1,14 +1,14 @@
 PID Cat (extended)
 ==================
 
-An update to Jake Wharton's excellent [pidcat][1] which filters `adb`
+Based on Jake Wharton's excellent [pidcat][1] which filters `adb`
 result by application package name.
 
 Basic usage:
 ```bash
     pidcat-ex com.oprah.bees.android
 ```
-On top of original [pidcat][1], this fork will mainly provide these additional features
+On top of the original [pidcat][1], this fork provides these additional features
  * `--timestamp`: add timestamp at the front of each line
  * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines with
                         specified color for each key word.

@@ -9,70 +9,6 @@ Basic usage:
     pidcat-ex com.oprah.bees.android
 ```
 On top of the original [pidcat][1], this fork provides these additional features
- * `--timestamp`: add timestamp at the front of each line
- * `--grep`, `--hl`, `--grepv`: grep, highlight or exclude lines with
-                        specified highlighting color for each key word in the list.
-                        The script filters the lines before they are cut by `pidcat`
-                        from the original lines out put by `adb` tool. 
-                        For example, `--grep="logs|sensor\cyan"`.
-                        Multiple key words should be delimited by `|`.
-                        You can specify different colors for each word in these
-                        options, which tailed the key word after `\`, and this is very helpful in checking different
-                        word terms in massive sophisticated log.
-                        The supported color names (case ignored) are
-                        `BLACK, RED, GREEN,
-                        YELLOW, BLUE, MAGENTA, CYAN,
-                        WHITE, BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE,
-                        BG_MAGENTA, BG_CYAN, BG_WHITE`.
-                        The color names with prefix 'BG_' are background colors.
-                        Corresponding case-ignored options are also
-                        provided: `--igrep`, `--ihl`, `--igrev`.
-                        Corresponding regular expression based
-                        options are supported
-                        as well: `--rgrep`, `--rhl`, `--rgrepv`
- * `--pipe`: it supports the script running in a pipe mode. For example,
-   ``adb -d logcat | pidcat-ex --pipe `tput cols` com.testapp``.
-   This is very useful if you want to use 3rd-party tool to filter
-   adb output, such as grepping, highlighting. For example,
-   ``adb -d logcat | h -i 'battery' | pidcat-ex --pipe `tput cols` com.testapp``.
-   [`h`][4] is a 3rd-party keyword highlighting utility.
-   The option needs the current terminal width provided as the parameter,
-   which is easy to get in shell using command `` `tput cols` ``.
- * `--extra-header-width`: if customized header added in each log line
-    besides Android headers, this option can help indent additional
-    space for each wrapped lines
- * `--hide-header`: you can also hide your customized header that you don't care
-   to shorten each log line
- * `--tee`, `--tee-pidcat`, `--tee-adb`: it supports to output
-   the filtered and un-filtered `pidcat` result as well as the original
-   `adb` result to specified files, which is useful for checking log later.
- * `--addr2line-tool`, `--addr2line-bin`: if you care about native code (C/C++) crash, this option
-   can automatically symbolicate the addresses to lines in code, given
-   that paths of the corresponding debug version native binary file (such as .so file)
-   and Android addr2line tool are provided
-
-If you want to use the `grep`, `highlight` and any other functions
-as a stand-alone tool so as to use it with other files or tools,
-you can check this one [`hl (A Text Highlighting Tool)`][2]
-
-Here is an example of the output of the following command:
-```bash
-    pidcat-ex --timestamp --ihl='oslog|logs|sensor\cyan|queuebatch\bg_blue|state\white|latency\bg_green|enable\magenta' --hl='screen\yellow|far\bg_yellow|event\bg_ack'
-```
-![Example screen](screen.png)
-
-Another example using pipe mode with 3rd-party [`h`][4] tool:
-```bash
-    adb logcat | h group android call Status Layout system pid event | pidcat-ex --pipe=`tput cols`
-```
-![Example screen](screen2.png)
-
-You could notice that
- * The words are highlighted in specified colors, even the cut words due to line wrapping (`--hl`);
- * Timestamps are headed in each line (`--timestamp`);
- * Additional indentation spaces are added to align the wrapped lines to the right of timestamp headers (`--header-width`);
-
-Here are details of all additional options provided:
 <pre>
   --timestamp           Prepend each line of output with the current time.
   --extra-header-width N
@@ -208,6 +144,27 @@ Here are details of all additional options provided:
                         match the addresses in the crash log, otherwise, the
                         symbolicated result would not be correct
 </pre>
+
+If you want to use the `grep`, `highlight` and any other functions
+as a stand-alone tool so as to use it with other files or tools,
+you can check this one [`hl (A Text Highlighting Tool)`][2]
+
+Here is an example of the output of the following command:
+```bash
+    pidcat-ex --timestamp --ihl='oslog|logs|sensor\cyan|queuebatch\bg_blue|state\white|latency\bg_green|enable\magenta' --hl='screen\yellow|far\bg_yellow|event\bg_ack'
+```
+![Example screen](screen.png)
+
+Another example using pipe mode with 3rd-party [`h`][4] tool:
+```bash
+    adb logcat | h group android call Status Layout system pid event | pidcat-ex --pipe=`tput cols`
+```
+![Example screen](screen2.png)
+
+You could notice that
+ * The words are highlighted in specified colors, even the cut words due to line wrapping (`--hl`);
+ * Timestamps are headed in each line (`--timestamp`);
+ * Additional indentation spaces are added to align the wrapped lines to the right of timestamp headers (`--header-width`);
 
 Install
 -------

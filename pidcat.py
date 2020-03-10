@@ -26,6 +26,7 @@ import sys
 import re
 import subprocess
 from subprocess import PIPE
+import json
 
 __version__ = '2.1.0'
 
@@ -46,6 +47,7 @@ parser.add_argument('-t', '--tag', dest='tag', action='append', help='Filter out
 parser.add_argument('-i', '--ignore-tag', dest='ignored_tag', action='append', help='Filter output by ignoring specified tag(s)')
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print the version number and exit')
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
+parser.add_argument('-j', '--json', dest='json', action='store_true', default=False, help='Enable JSON logs')
 
 args = parser.parse_args()
 min_level = LOG_LEVELS_MAP[args.min_level.upper()]
@@ -270,6 +272,10 @@ while True:
       seen_pids = True
       pids.add(pid)
 
+json_m=''
+json_endpoint=''
+is_json=False
+
 while adb.poll() is None:
   try:
     line = adb.stdout.readline().decode('utf-8', 'replace').strip()
@@ -333,9 +339,15 @@ while adb.poll() is None:
 
   linebuf = ''
 
+  color_to_print=allocate_color(tag)
+  
   if args.tag_width > 0:
     # right-align tag title and allocate color if needed
     if tag != last_tag or args.always_tags:
+      # json_m=''
+      linebuf +=' ' * (header_size - 1)
+      linebuf +='-' * (width - header_size - 2)
+      linebuf += '\n'
       last_tag = tag
       color = allocate_color(tag)
       tag = tag[-args.tag_width:].rjust(args.tag_width)
@@ -356,5 +368,34 @@ while adb.poll() is None:
     replace = RULES[matcher]
     message = matcher.sub(replace, message)
 
-  linebuf += indent_wrap(message)
-  print(linebuf.encode('utf-8'))
+
+  ENABLE_JSON=args.json
+
+  if ENABLE_JSON:
+    if message.startswith('<-- '):
+      json_endpoint=message
+    elif message.startswith('[') or message.startswith('{'):
+      is_json=True
+      json_m = message
+    elif (json_m.startswith('[') and message.endswith(']')) or (json_m.startswith('{') and message.endswith('}')):
+      json_m += message
+      try:
+        json_m=json.dumps(json.loads(json_m),indent=2)
+        print('\n' + ('-' * (width - 1)))
+        print('[' + colorize(json_endpoint, BLUE) + ']')
+        print(colorize(json_m, CYAN))
+        print('\n' + ('-' * (width - 1)))
+        print('\n')
+      except:
+        pass
+      json_m=''
+      is_json=False
+      json_endpoint=''
+    else:
+      json_m += message
+      if not is_json:
+        linebuf += indent_wrap(colorize(message, color_to_print))
+        print(linebuf.encode('utf-8'))
+  else:
+    linebuf += indent_wrap(colorize(message, color_to_print))
+    print(linebuf.encode('utf-8'))  

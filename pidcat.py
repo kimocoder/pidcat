@@ -1,4 +1,4 @@
-#!/usr/bin/env -S python -u
+#!/usr/bin/env -S python3 -u
 
 '''
 Copyright 2009, The Android Open Source Project
@@ -22,6 +22,7 @@ limitations under the License.
 # Package filtering and output improvements by Jake Wharton, http://jakewharton.com
 
 import argparse
+import signal
 import sys
 import re
 import subprocess
@@ -47,6 +48,12 @@ parser.add_argument('-i', '--ignore-tag', dest='ignored_tag', action='append', h
 parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__, help='Print the version number and exit')
 parser.add_argument('-a', '--all', dest='all', action='store_true', default=False, help='Print all log messages')
 
+def signal_handler(sig, frame):
+  print('')
+  sys.exit(signal.SIGINT)
+
+signal.signal(signal.SIGINT, signal_handler)
+
 args = parser.parse_args()
 min_level = LOG_LEVELS_MAP[args.min_level.upper()]
 
@@ -70,11 +77,11 @@ if len(package) == 0:
   args.all = True
 
 # Store the names of packages for which to match all processes.
-catchall_package = filter(lambda package: package.find(":") == -1, package)
+catchall_package = [package for package in package if package.find(":") == -1]
 # Store the name of processes to match exactly.
-named_processes = filter(lambda package: package.find(":") != -1, package)
+named_processes = [package for package in package if package.find(":") != -1]
 # Convert default process names from <package>: (cli notation) to <package> (android notation) in the exact names match group.
-named_processes = map(lambda package: package if package.find(":") != len(package) - 1 else package[:-1], named_processes)
+named_processes = [package if package.find(":") != len(package) - 1 else package[:-1] for package in named_processes]
 
 header_size = args.tag_width + 1 + 3 + 1 # space, level, space
 
@@ -86,7 +93,7 @@ try:
 except:
   pass
 
-BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
+BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = list(range(8))
 
 RESET = '\033[0m'
 
@@ -357,4 +364,4 @@ while adb.poll() is None:
     message = matcher.sub(replace, message)
 
   linebuf += indent_wrap(message)
-  print(linebuf.encode('utf-8'))
+  print(linebuf)

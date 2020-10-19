@@ -28,7 +28,7 @@ import re
 import subprocess
 from subprocess import PIPE
 
-__version__ = '2.1.0'
+__version__ = '2.1.1'
 
 LOG_LEVELS = 'VDIWEF'
 LOG_LEVELS_MAP = dict([(LOG_LEVELS[i], i) for i in range(len(LOG_LEVELS))])
@@ -86,6 +86,8 @@ named_processes = [package if package.find(":") != len(package) - 1 else package
 
 header_size = args.tag_width + 1 + 3 + 1 # space, level, space
 
+stdout_isatty = sys.stdout.isatty()
+
 width = -1
 try:
   # Get the current terminal width
@@ -105,7 +107,7 @@ def termcolor(fg=None, bg=None):
   return '\033[%sm' % ';'.join(codes) if codes else ''
 
 def colorize(message, fg=None, bg=None):
-  return termcolor(fg, bg) + message + RESET
+  return termcolor(fg, bg) + message + RESET if stdout_isatty else message
 
 def indent_wrap(message):
   if width == -1:
@@ -261,7 +263,7 @@ def parse_start_proc(line):
     return line_package, '', line_pid, line_uid, ''
   return None
 
-def tag_in_tags_regex(tag, tags):  
+def tag_in_tags_regex(tag, tags):
   return any(re.match(r'^' + t + r'$', tag) for t in map(str.strip, tags))
 
 ps_command = base_adb_command + ['shell', 'ps']

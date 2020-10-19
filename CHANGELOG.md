@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+Version 2.1.1 *(2016-07-13)*
+
+* Fix: Passthrough ADB's stderr through terminal
+* Fix: Use a more generic shebang
+* Fix: Print a final newline when receiving `SIGINT`
+* Fix: Update to Python3
+
 Version 2.1.0 *(2016-09-07)*
 ----------------------------
 
